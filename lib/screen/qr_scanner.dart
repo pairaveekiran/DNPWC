@@ -79,8 +79,8 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Colors.black.withOpacity(0.7),
-              Colors.black.withOpacity(0.3),
+              Colors.black.withValues(alpha: 0.7),
+              Colors.black.withValues(alpha: 0.3),
               Colors.transparent,
             ],
           ),
@@ -94,10 +94,10 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: Colors.white.withValues(alpha: 0.3),
                     width: 1.2,
                   ),
                 ),
@@ -145,11 +145,11 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
                 height: 44,
                 decoration: BoxDecoration(
                   color: _isTorchOn
-                      ? Colors.white.withOpacity(0.25)
-                      : Colors.white.withOpacity(0.15),
+                      ? Colors.white.withValues(alpha: 0.25)
+                      : Colors.white.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: Colors.white.withValues(alpha: 0.3),
                     width: 1.2,
                   ),
                 ),
@@ -181,7 +181,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
             begin: Alignment.bottomCenter,
             end: Alignment.topCenter,
             colors: [
-              Colors.black.withOpacity(0.85),
+              Colors.black.withValues(alpha: 0.85),
               Colors.transparent,
             ],
           ),
@@ -192,10 +192,10 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
             vertical: 14,
           ),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
+            color: Colors.white.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Colors.white.withOpacity(0.15),
+              color: Colors.white.withValues(alpha: 0.15),
               width: 1,
             ),
           ),
@@ -204,7 +204,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: accentBlue.withOpacity(0.25),
+                  color: accentBlue.withValues(alpha: 0.25),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(

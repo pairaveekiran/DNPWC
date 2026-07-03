@@ -162,7 +162,7 @@ class AppDrawer extends StatelessWidget {
                     Text(
                       'बबरमहल, काठमाडौं',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.85),
+                        color: Colors.white.withValues(alpha: 0.85),
                         fontSize: 12,
                       ),
                     ),
@@ -186,7 +186,7 @@ class AppDrawer extends StatelessWidget {
           Text(
             'john.doe9876@gmail.com',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.85),
+              color: Colors.white.withValues(alpha: 0.85),
               fontSize: 13,
             ),
           ),
@@ -207,7 +207,7 @@ class AppDrawer extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       decoration: BoxDecoration(
-        color: isSelected ? _lightBlue.withOpacity(0.08) : Colors.transparent,
+        color: isSelected ? _lightBlue.withValues(alpha: 0.08) : Colors.transparent,
         borderRadius: BorderRadius.circular(10),
       ),
       child: ListTile(

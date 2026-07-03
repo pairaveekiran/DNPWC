@@ -221,10 +221,10 @@ class _NoticesPageState extends State<NoticesPage>
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
+                        color: Colors.white.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.4),
+                          color: Colors.white.withValues(alpha: 0.4),
                           width: 1.2,
                         ),
                       ),
@@ -257,7 +257,7 @@ class _NoticesPageState extends State<NoticesPage>
                               ? "$unreadCount unread notification${unreadCount > 1 ? 's' : ''}"
                               : "Stay updated with announcements",
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.75),
+                            color: Colors.white.withValues(alpha: 0.75),
                             fontSize: 12,
                             fontWeight: FontWeight.w400,
                           ),
@@ -316,14 +316,14 @@ class _NoticesPageState extends State<NoticesPage>
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color: primaryBlue.withOpacity(0.3),
+                            color: primaryBlue.withValues(alpha: 0.3),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
                         ]
                       : [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
+                            color: Colors.black.withValues(alpha: 0.04),
                             blurRadius: 6,
                             offset: const Offset(0, 2),
                           ),
@@ -350,7 +350,7 @@ class _NoticesPageState extends State<NoticesPage>
                         ),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? Colors.white.withOpacity(0.25)
+                              ? Colors.white.withValues(alpha: 0.25)
                               : const Color(0xFFE8EEF8),
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -389,7 +389,7 @@ class _NoticesPageState extends State<NoticesPage>
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: primaryBlue.withOpacity(0.1),
+                  color: primaryBlue.withValues(alpha: 0.1),
                   blurRadius: 20,
                   offset: const Offset(0, 6),
                 ),
@@ -458,7 +458,7 @@ class _NoticesPageState extends State<NoticesPage>
                   height: 190,
                   width: 190,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFD6E4FF).withOpacity(0.3),
+                    color: const Color(0xFFD6E4FF).withValues(alpha: 0.3),
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -466,7 +466,7 @@ class _NoticesPageState extends State<NoticesPage>
                   height: 148,
                   width: 148,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFD6E4FF).withOpacity(0.6),
+                    color: const Color(0xFFD6E4FF).withValues(alpha: 0.6),
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -482,7 +482,7 @@ class _NoticesPageState extends State<NoticesPage>
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: primaryBlue.withOpacity(0.4),
+                        color: primaryBlue.withValues(alpha: 0.4),
                         blurRadius: 24,
                         offset: const Offset(0, 10),
                       ),
@@ -506,7 +506,7 @@ class _NoticesPageState extends State<NoticesPage>
                       border: Border.all(color: Colors.white, width: 2),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFE67E22).withOpacity(0.4),
+                          color: const Color(0xFFE67E22).withValues(alpha: 0.4),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -600,7 +600,7 @@ class _NoticesPageState extends State<NoticesPage>
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.red.withOpacity(0.15),
+                    color: Colors.red.withValues(alpha: 0.15),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -656,7 +656,7 @@ class _NoticesPageState extends State<NoticesPage>
                     borderRadius: BorderRadius.circular(25),
                   ),
                   elevation: 6,
-                  shadowColor: primaryBlue.withOpacity(0.4),
+                  shadowColor: primaryBlue.withValues(alpha: 0.4),
                 ),
                 icon: const Icon(Icons.refresh_rounded, size: 20),
                 label: const Text(
@@ -689,7 +689,7 @@ class _NoticesPageState extends State<NoticesPage>
         ),
         boxShadow: [
           BoxShadow(
-            color: primaryBlue.withOpacity(notice.isUnread ? 0.08 : 0.04),
+            color: primaryBlue.withValues(alpha: notice.isUnread ? 0.08 : 0.04),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -753,7 +753,7 @@ class _NoticesPageState extends State<NoticesPage>
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: accentBlue.withOpacity(0.4),
+                                    color: accentBlue.withValues(alpha: 0.4),
                                     blurRadius: 6,
                                     offset: const Offset(0, 2),
                                   ),
