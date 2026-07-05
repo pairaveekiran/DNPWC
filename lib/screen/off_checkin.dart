@@ -412,10 +412,10 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
                   height: 42,
                   margin: const EdgeInsets.only(left: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                       width: 1.2,
                     ),
                   ),
@@ -461,11 +461,11 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
                   height: 42,
                   decoration: BoxDecoration(
                     color: _isSyncing
-                        ? Colors.white.withOpacity(0.08)
-                        : Colors.white.withOpacity(0.15),
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : Colors.white.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                       width: 1.2,
                     ),
                   ),
@@ -501,7 +501,7 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
         border: Border.all(color: const Color(0xFFFFCC80), width: 1),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFE67E22).withOpacity(0.08),
+            color: const Color(0xFFE67E22).withValues(alpha: 0.08),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -517,7 +517,7 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFFE67E22).withOpacity(0.3),
+                  color: const Color(0xFFE67E22).withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 3),
                 ),
@@ -581,7 +581,7 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: [
                     BoxShadow(
-                      color: primaryBlue.withOpacity(0.3),
+                      color: primaryBlue.withValues(alpha: 0.3),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -963,7 +963,7 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
             physics: const NeverScrollableScrollPhysics(),
             padding: EdgeInsets.zero,
             itemCount: _scannedPermits.length,
-            separatorBuilder: (_, __) => const Divider(
+            separatorBuilder: (_, _) => const Divider(
               height: 1,
               thickness: 1,
               color: Color(0xFFF0F4FA),
@@ -1196,7 +1196,7 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: primaryBlue.withOpacity(0.06),
+            color: primaryBlue.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -1233,7 +1233,7 @@ class _ActionButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: gradient.last.withOpacity(0.35),
+            color: gradient.last.withValues(alpha: 0.35),
             blurRadius: 14,
             offset: const Offset(0, 6),
           ),
@@ -1254,7 +1254,7 @@ class _ActionButton extends StatelessWidget {
                 height: 32,
                 width: 32,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icon, color: Colors.white, size: 18),
@@ -1275,7 +1275,7 @@ class _ActionButton extends StatelessWidget {
                   height: 20,
                   width: 20,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.25),
+                    color: Colors.white.withValues(alpha: 0.25),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(

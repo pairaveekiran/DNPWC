@@ -116,10 +116,10 @@ class ProfilePage extends StatelessWidget {
               width: 42,
               height: 42,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.18),
+                color: Colors.white.withValues(alpha: 0.18),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.4),
+                  color: Colors.white.withValues(alpha: 0.4),
                   width: 1.2,
                 ),
               ),
@@ -158,7 +158,7 @@ class ProfilePage extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: darkBlue.withOpacity(0.12),
+            color: darkBlue.withValues(alpha: 0.12),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -183,7 +183,7 @@ class ProfilePage extends StatelessWidget {
                   border: Border.all(color: primaryBlue, width: 3),
                   boxShadow: [
                     BoxShadow(
-                      color: primaryBlue.withOpacity(0.2),
+                      color: primaryBlue.withValues(alpha: 0.2),
                       blurRadius: 16,
                       offset: const Offset(0, 6),
                     ),
@@ -264,7 +264,7 @@ class ProfilePage extends StatelessWidget {
               ),
               borderRadius: BorderRadius.circular(30),
               border: Border.all(
-                color: primaryBlue.withOpacity(0.25),
+                color: primaryBlue.withValues(alpha: 0.25),
               ),
             ),
             child: const Row(
@@ -336,7 +336,7 @@ class ProfilePage extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: darkBlue.withOpacity(0.05),
+            color: darkBlue.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -403,7 +403,7 @@ class ProfilePage extends StatelessWidget {
           backgroundColor: signOutRed,
           foregroundColor: Colors.white,
           elevation: 6,
-          shadowColor: signOutRed.withOpacity(0.4),
+          shadowColor: signOutRed.withValues(alpha: 0.4),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
@@ -443,7 +443,7 @@ class ProfilePage extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: signOutRed.withOpacity(0.1),
+                  color: signOutRed.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(

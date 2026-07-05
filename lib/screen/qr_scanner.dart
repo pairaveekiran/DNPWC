@@ -1,5 +1,7 @@
+import 'package:dnpwc/screen/dummy.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+
 
 class QRScannerScreen extends StatefulWidget {
   const QRScannerScreen({super.key});
@@ -10,7 +12,6 @@ class QRScannerScreen extends StatefulWidget {
 
 class _QRScannerScreenState extends State<QRScannerScreen> {
   static const Color accentBlue = Color(0xFF1976D2);
-  //static const Color primaryBlue = Color(0xFF0A2E5C);
 
   final MobileScannerController _cameraController = MobileScannerController();
   bool _isScanned = false;
@@ -22,6 +23,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
     super.dispose();
   }
 
+  // ─── HANDLE QR DETECTION ───
   void _onDetect(BarcodeCapture capture) {
     if (_isScanned) return;
 
@@ -30,7 +32,17 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
 
     if (code != null && code.isNotEmpty) {
       setState(() => _isScanned = true);
-      Navigator.pop(context, code);
+
+      // Stop camera before navigating
+      _cameraController.stop();
+
+      // ─── NAVIGATE TO DUMMY SCREEN ───
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SinglePostCheckIn(scannedCode: code),
+        ),
+      );
     }
   }
 
@@ -45,16 +57,11 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // ─── FULL SCREEN CAMERA ───
           MobileScanner(
             controller: _cameraController,
             onDetect: _onDetect,
           ),
-
-          // ─── TOP HEADER BAR ───
           _buildTopBar(),
-
-          // ─── BOTTOM INFO BAR ───
           _buildBottomBar(),
         ],
       ),
@@ -79,25 +86,24 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Colors.black.withOpacity(0.7),
-              Colors.black.withOpacity(0.3),
+              Colors.black.withValues(alpha: 0.7),
+              Colors.black.withValues(alpha: 0.3),
               Colors.transparent,
             ],
           ),
         ),
         child: Row(
           children: [
-            // ─── BACK BUTTON ───
             GestureDetector(
               onTap: () => Navigator.pop(context),
               child: Container(
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: Colors.white.withValues(alpha: 0.3),
                     width: 1.2,
                   ),
                 ),
@@ -109,8 +115,6 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
               ),
             ),
             const SizedBox(width: 14),
-
-            // ─── TITLE ───
             const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -136,8 +140,6 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
                 ],
               ),
             ),
-
-            // ─── TORCH TOGGLE ───
             GestureDetector(
               onTap: _toggleTorch,
               child: Container(
@@ -145,11 +147,11 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
                 height: 44,
                 decoration: BoxDecoration(
                   color: _isTorchOn
-                      ? Colors.white.withOpacity(0.25)
-                      : Colors.white.withOpacity(0.15),
+                      ? Colors.white.withValues(alpha: 0.25)
+                      : Colors.white.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: Colors.white.withValues(alpha: 0.3),
                     width: 1.2,
                   ),
                 ),
@@ -181,7 +183,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
             begin: Alignment.bottomCenter,
             end: Alignment.topCenter,
             colors: [
-              Colors.black.withOpacity(0.85),
+              Colors.black.withValues(alpha: 0.85),
               Colors.transparent,
             ],
           ),
@@ -192,10 +194,10 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
             vertical: 14,
           ),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
+            color: Colors.white.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Colors.white.withOpacity(0.15),
+              color: Colors.white.withValues(alpha: 0.15),
               width: 1,
             ),
           ),
@@ -204,7 +206,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: accentBlue.withOpacity(0.25),
+                  color: accentBlue.withValues(alpha: 0.25),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
