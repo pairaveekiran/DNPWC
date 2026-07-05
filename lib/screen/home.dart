@@ -209,7 +209,11 @@ class _HomePageState extends State<HomePage> {
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
+
                 color: lightBlue.withValues(alpha:0.2),
+
+               
+
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
