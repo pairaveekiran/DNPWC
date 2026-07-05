@@ -21,6 +21,7 @@ class ProfilePage extends StatelessWidget {
   static const String _userRole = 'Wildlife Officer';
   static const String _userGender = 'Male';
   static const String _userId = 'DNPWC-2024-0387';
+  static const String _userOrganization = 'Chitwan National Park';
 
   @override
   Widget build(BuildContext context) {
@@ -63,6 +64,12 @@ class ProfilePage extends StatelessWidget {
                           icon: Icons.fingerprint_rounded,
                           label: 'Employee ID',
                           value: _userId,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildInfoCard(
+                          icon: Icons.apartment_rounded,
+                          label: 'Organization',
+                          value: _userOrganization,
                         ),
                         const SizedBox(height: 28),
                         _buildSignOutButton(context),
