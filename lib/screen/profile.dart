@@ -1,72 +1,281 @@
+import 'package:dnpwc/models/user_profile.dart';
+import 'package:dnpwc/screen/login.dart';
+import 'package:dnpwc/services/auth_service.dart';
+import 'package:dnpwc/services/profile_service.dart';
 import 'package:flutter/material.dart';
-import 'login.dart';
 
-class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
+class ProfilePage
+    extends
+        StatefulWidget {
+  const ProfilePage({
+    super.key,
+    this.userProfile,
+  });
 
-  // ─── COLOR PALETTE ───
-  static const Color primaryBlue = Color(0xFF0D47A1);
-  static const Color darkBlue = Color(0xFF0A2E5C);
-  static const Color mediumBlue = Color(0xFF1E5AA8);
-  static const Color accentBlue = Color(0xFF1976D2);
-  static const Color lightBlueTint = Color(0xFFEEF4FF);
-  static const Color backgroundColor = Color(0xFFF4F7FC);
-  static const Color signOutRed = Color(0xFFEF4444);
-  static const Color textPrimary = Color(0xFF1A2547);
-  static const Color textSecondary = Color(0xFF6B7BA4);
-
-  // ─── USER DATA ───
-  static const String _userName = 'John Doe';
-  static const String _userEmail = 'john.doe9876@gmail.com';
-  static const String _userRole = 'Wildlife Officer';
-  static const String _userGender = 'Male';
-  static const String _userId = 'DNPWC-2024-0387';
+  final UserProfile?
+  userProfile;
 
   @override
-  Widget build(BuildContext context) {
+  State<
+    ProfilePage
+  >
+  createState() =>
+      _ProfilePageState();
+}
+
+class _ProfilePageState
+    extends
+        State<
+          ProfilePage
+        > {
+  static const Color
+  primaryBlue = Color(
+    0xFF0D47A1,
+  );
+  static const Color
+  darkBlue = Color(
+    0xFF0A2E5C,
+  );
+  static const Color
+  mediumBlue = Color(
+    0xFF1E5AA8,
+  );
+  static const Color
+  accentBlue = Color(
+    0xFF1976D2,
+  );
+  static const Color
+  lightBlueTint = Color(
+    0xFFEEF4FF,
+  );
+  static const Color
+  backgroundColor = Color(
+    0xFFF4F7FC,
+  );
+  static const Color
+  signOutRed = Color(
+    0xFFEF4444,
+  );
+  static const Color
+  textPrimary = Color(
+    0xFF1A2547,
+  );
+  static const Color
+  textSecondary = Color(
+    0xFF6B7BA4,
+  );
+
+  final ProfileService
+  _profileService =
+      ProfileService();
+
+  UserProfile?
+  _profile;
+  bool
+  _isLoading =
+      false;
+  String?
+  _errorMessage;
+  bool
+  _logoutFromAllDevices =
+      false;
+
+  @override
+  void
+  initState() {
+    super.initState();
+    if (widget.userProfile !=
+        null) {
+      _profile = widget.userProfile;
+    } else {
+      _fetchProfile();
+    }
+  }
+
+  Future<
+    void
+  >
+  _fetchProfile() async {
+    if (mounted) {
+      setState(
+        () {
+          _isLoading = true;
+          _errorMessage = null;
+        },
+      );
+    }
+
+    final result =
+        await _profileService.getProfile();
+
+    if (!mounted) {
+      return;
+    }
+
+    if (result
+        is ProfileSuccess) {
+      setState(
+        () {
+          _profile = result.userProfile;
+          _isLoading = false;
+          _errorMessage = null;
+        },
+      );
+      return;
+    }
+
+    if (result
+        is ProfileUnauthorized) {
+      await AuthService().clearSession();
+      if (!mounted) {
+        return;
+      }
+      Navigator.of(
+        context,
+      ).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder:
+              (
+                _,
+              ) => const LoginPage(),
+        ),
+        (
+          route,
+        ) => false,
+      );
+      return;
+    }
+
+    final message =
+        result
+            is ProfileNetworkError
+        ? result.message
+        : result
+              is ProfileFailure
+        ? result.message
+        : 'Something went wrong, please try again';
+
+    setState(() {
+      _errorMessage = message;
+      _isLoading = false;
+    });
+  }
+
+  Future<
+    void
+  >
+  _signOut() async {
+    await AuthService().clearSession();
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.of(
+      context,
+    ).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder:
+            (
+              _,
+            ) => const LoginPage(),
+      ),
+      (
+        route,
+      ) => false,
+    );
+  }
+
+  @override
+  Widget
+  build(
+    BuildContext
+    context,
+  ) {
+    if (_profile ==
+        null) {
+      if (_isLoading) {
+        return _buildLoadingState();
+      }
+      return _buildErrorState();
+    }
+
     return Scaffold(
       backgroundColor: backgroundColor,
       body: Stack(
         children: [
-          // ─── GRADIENT HEADER BACKGROUND ───
           _buildHeaderBackground(),
-
-          // ─── MAIN SCROLLABLE CONTENT ───
           SafeArea(
             child: Column(
               children: [
-                _buildTopBar(context),
+                _buildTopBar(
+                  context,
+                ),
                 Expanded(
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                    padding: const EdgeInsets.fromLTRB(
+                      20,
+                      8,
+                      20,
+                      20,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildProfileCard(),
-                        const SizedBox(height: 28),
-                        _buildSectionTitle('General Information'),
-                        const SizedBox(height: 14),
+                        _buildProfileCard(
+                          _profile!,
+                        ),
+                        const SizedBox(
+                          height: 28,
+                        ),
+                        _buildSectionTitle(
+                          'General Information',
+                        ),
+                        const SizedBox(
+                          height: 14,
+                        ),
                         _buildInfoCard(
                           icon: Icons.badge_outlined,
                           label: 'Role',
-                          value: _userRole,
+                          value: _profile!.roleName,
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(
+                          height: 12,
+                        ),
                         _buildInfoCard(
                           icon: Icons.person_outline_rounded,
                           label: 'Gender',
-                          value: _userGender,
+                          value: _profile!.gender,
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(
+                          height: 12,
+                        ),
                         _buildInfoCard(
                           icon: Icons.fingerprint_rounded,
                           label: 'Employee ID',
-                          value: _userId,
+                          value: _profile!.employeeId,
                         ),
-                        const SizedBox(height: 28),
-                        _buildSignOutButton(context),
-                        const SizedBox(height: 16),
+                        const SizedBox(
+                          height: 12,
+                        ),
+                        _buildInfoCard(
+                          icon: Icons.apartment_rounded,
+                          label: 'Organization',
+                          value: _profile!.organizationDescription,
+                        ),
+                        const SizedBox(
+                          height: 28,
+                        ),
+                        _buildLogoutAllDevicesOption(),
+                        const SizedBox(
+                          height: 12,
+                        ),
+                        _buildSignOutButton(
+                          context,
+                        ),
+                        const SizedBox(
+                          height: 16,
+                        ),
                       ],
                     ),
                   ),
@@ -79,47 +288,144 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  // ─── HEADER GRADIENT BACKGROUND ───
-  Widget _buildHeaderBackground() {
+  Widget
+  _buildLoadingState() {
+    return const Scaffold(
+      backgroundColor: backgroundColor,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(
+              height: 12,
+            ),
+            Text(
+              'Loading profile...',
+              style: TextStyle(
+                color: Colors.black54,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget
+  _buildErrorState() {
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(
+            24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 44,
+                color: Colors.redAccent,
+              ),
+              const SizedBox(
+                height: 12,
+              ),
+              Text(
+                _errorMessage ??
+                    'Something went wrong, please try again',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.black87,
+                  fontSize: 14,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(
+                height: 16,
+              ),
+              ElevatedButton(
+                onPressed: _fetchProfile,
+                child: const Text(
+                  'Retry',
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget
+  _buildHeaderBackground() {
     return Container(
       height: 220,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [darkBlue, mediumBlue],
+          colors: [
+            darkBlue,
+            mediumBlue,
+          ],
         ),
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
+          bottomLeft: Radius.circular(
+            32,
+          ),
+          bottomRight: Radius.circular(
+            32,
+          ),
         ),
         boxShadow: [
           BoxShadow(
-            color: Color(0x33000000),
+            color: Color(
+              0x33000000,
+            ),
             blurRadius: 14,
-            offset: Offset(0, 4),
+            offset: Offset(
+              0,
+              4,
+            ),
           ),
         ],
       ),
     );
   }
 
-  // ─── TOP BAR (Back button + Title) ───
-  Widget _buildTopBar(BuildContext context) {
+  Widget
+  _buildTopBar(
+    BuildContext
+    context,
+  ) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+      padding: const EdgeInsets.fromLTRB(
+        16,
+        8,
+        16,
+        20,
+      ),
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => Navigator.pop(context),
+            onTap: () => Navigator.pop(
+              context,
+            ),
             child: Container(
               width: 42,
               height: 42,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.18),
+                color: Colors.white.withValues(
+                  alpha: 0.18,
+                ),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.4),
+                  color: Colors.white.withValues(
+                    alpha: 0.4,
+                  ),
                   width: 1.2,
                 ),
               ),
@@ -142,31 +448,47 @@ class ProfilePage extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 42),
+          const SizedBox(
+            width: 42,
+          ),
         ],
       ),
     );
   }
 
-  // ─── PROFILE CARD ───
-  Widget _buildProfileCard() {
+  Widget
+  _buildProfileCard(
+    UserProfile
+    profile,
+  ) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+      padding: const EdgeInsets.fromLTRB(
+        20,
+        24,
+        20,
+        24,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(
+          22,
+        ),
         boxShadow: [
           BoxShadow(
-            color: darkBlue.withValues(alpha: 0.12),
+            color: darkBlue.withValues(
+              alpha: 0.12,
+            ),
             blurRadius: 20,
-            offset: const Offset(0, 8),
+            offset: const Offset(
+              0,
+              8,
+            ),
           ),
         ],
       ),
       child: Column(
         children: [
-          // Avatar with glow
           Stack(
             alignment: Alignment.center,
             children: [
@@ -178,14 +500,27 @@ class ProfilePage extends StatelessWidget {
                   gradient: const LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [lightBlueTint, Color(0xFFDDE7F5)],
+                    colors: [
+                      lightBlueTint,
+                      Color(
+                        0xFFDDE7F5,
+                      ),
+                    ],
                   ),
-                  border: Border.all(color: primaryBlue, width: 3),
+                  border: Border.all(
+                    color: primaryBlue,
+                    width: 3,
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: primaryBlue.withValues(alpha: 0.2),
+                      color: primaryBlue.withValues(
+                        alpha: 0.2,
+                      ),
                       blurRadius: 16,
-                      offset: const Offset(0, 6),
+                      offset: const Offset(
+                        0,
+                        6,
+                      ),
                     ),
                   ],
                 ),
@@ -195,7 +530,6 @@ class ProfilePage extends StatelessWidget {
                   size: 55,
                 ),
               ),
-              // Verified badge
               Positioned(
                 bottom: 2,
                 right: 2,
@@ -205,7 +539,10 @@ class ProfilePage extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: accentBlue,
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2.5),
+                    border: Border.all(
+                      color: Colors.white,
+                      width: 2.5,
+                    ),
                   ),
                   child: const Icon(
                     Icons.check_rounded,
@@ -216,21 +553,21 @@ class ProfilePage extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-
-          // Name
-          const Text(
-            _userName,
-            style: TextStyle(
+          const SizedBox(
+            height: 16,
+          ),
+          Text(
+            profile.name,
+            style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w800,
               color: textPrimary,
               letterSpacing: 0.3,
             ),
           ),
-          const SizedBox(height: 6),
-
-          // Email
+          const SizedBox(
+            height: 6,
+          ),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -239,9 +576,11 @@ class ProfilePage extends StatelessWidget {
                 size: 14,
                 color: textSecondary,
               ),
-              const SizedBox(width: 6),
+              const SizedBox(
+                width: 6,
+              ),
               Text(
-                _userEmail,
+                profile.email,
                 style: const TextStyle(
                   fontSize: 13,
                   color: textSecondary,
@@ -250,9 +589,9 @@ class ProfilePage extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-
-          // Role Badge
+          const SizedBox(
+            height: 16,
+          ),
           Container(
             padding: const EdgeInsets.symmetric(
               horizontal: 18,
@@ -260,25 +599,36 @@ class ProfilePage extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [lightBlueTint, Color(0xFFDDE7F5)],
+                colors: [
+                  lightBlueTint,
+                  Color(
+                    0xFFDDE7F5,
+                  ),
+                ],
               ),
-              borderRadius: BorderRadius.circular(30),
+              borderRadius: BorderRadius.circular(
+                30,
+              ),
               border: Border.all(
-                color: primaryBlue.withValues(alpha: 0.25),
+                color: primaryBlue.withValues(
+                  alpha: 0.25,
+                ),
               ),
             ),
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
+                const Icon(
                   Icons.verified_rounded,
                   color: primaryBlue,
                   size: 15,
                 ),
-                SizedBox(width: 6),
+                const SizedBox(
+                  width: 6,
+                ),
                 Text(
-                  _userRole,
-                  style: TextStyle(
+                  profile.roleName,
+                  style: const TextStyle(
                     color: primaryBlue,
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -293,8 +643,11 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  // ─── SECTION TITLE ───
-  Widget _buildSectionTitle(String title) {
+  Widget
+  _buildSectionTitle(
+    String
+    title,
+  ) {
     return Row(
       children: [
         Container(
@@ -304,12 +657,19 @@ class ProfilePage extends StatelessWidget {
             gradient: const LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [primaryBlue, accentBlue],
+              colors: [
+                primaryBlue,
+                accentBlue,
+              ],
             ),
-            borderRadius: BorderRadius.circular(2),
+            borderRadius: BorderRadius.circular(
+              2,
+            ),
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(
+          width: 10,
+        ),
         Text(
           title,
           style: const TextStyle(
@@ -323,40 +683,58 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  // ─── INFO CARD ───
-  Widget _buildInfoCard({
-    required IconData icon,
-    required String label,
-    required String value,
+  Widget
+  _buildInfoCard({
+    required IconData
+    icon,
+    required String
+    label,
+    required String
+    value,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 16,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(
+          14,
+        ),
         boxShadow: [
           BoxShadow(
-            color: darkBlue.withValues(alpha: 0.05),
+            color: darkBlue.withValues(
+              alpha: 0.05,
+            ),
             blurRadius: 10,
-            offset: const Offset(0, 3),
+            offset: const Offset(
+              0,
+              3,
+            ),
           ),
         ],
       ),
       child: Row(
         children: [
-          // Icon
           Container(
             width: 44,
             height: 44,
             decoration: BoxDecoration(
               color: lightBlueTint,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(
+                12,
+              ),
             ),
-            child: Icon(icon, color: primaryBlue, size: 22),
+            child: Icon(
+              icon,
+              color: primaryBlue,
+              size: 22,
+            ),
           ),
-          const SizedBox(width: 14),
-
-          // Label
+          const SizedBox(
+            width: 14,
+          ),
           Expanded(
             child: Text(
               label,
@@ -367,8 +745,6 @@ class ProfilePage extends StatelessWidget {
               ),
             ),
           ),
-
-          // Value pill
           Container(
             padding: const EdgeInsets.symmetric(
               horizontal: 14,
@@ -376,7 +752,9 @@ class ProfilePage extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               color: lightBlueTint,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(
+                20,
+              ),
             ),
             child: Text(
               value,
@@ -392,27 +770,81 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  // ─── SIGN OUT BUTTON ───
-  Widget _buildSignOutButton(BuildContext context) {
+  Widget
+  _buildLogoutAllDevicesOption() {
+    return Row(
+      children: [
+        Checkbox(
+          value: _logoutFromAllDevices,
+          activeColor: signOutRed,
+          onChanged: (
+            value,
+          ) {
+            setState(
+              () {
+                _logoutFromAllDevices = value ?? false;
+              },
+            );
+          },
+        ),
+        Expanded(
+          child: GestureDetector(
+            onTap: () {
+              setState(
+                () {
+                  _logoutFromAllDevices = !_logoutFromAllDevices;
+                },
+              );
+            },
+            child: const Text(
+              'Log out from all devices',
+              style: TextStyle(
+                fontSize: 14,
+                color: textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget
+  _buildSignOutButton(
+    BuildContext
+    context,
+  ) {
     return SizedBox(
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
-        onPressed: () => _showSignOutDialog(context),
+        onPressed: () => _showSignOutDialog(
+          context,
+        ),
         style: ElevatedButton.styleFrom(
           backgroundColor: signOutRed,
           foregroundColor: Colors.white,
           elevation: 6,
-          shadowColor: signOutRed.withValues(alpha: 0.4),
+          shadowColor: signOutRed.withValues(
+            alpha: 0.4,
+          ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(
+              14,
+            ),
           ),
         ),
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.logout_rounded, size: 22),
-            SizedBox(width: 10),
+            Icon(
+              Icons.logout_rounded,
+              size: 22,
+            ),
+            SizedBox(
+              width: 10,
+            ),
             Text(
               'Sign Out',
               style: TextStyle(
@@ -427,109 +859,228 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  // ─── SIGN OUT DIALOG ───
-  void _showSignOutDialog(BuildContext context) {
+  void
+  _showSignOutDialog(
+    BuildContext
+    context,
+  ) {
+    bool
+    isSigningOut = false;
+    String?
+    errorText;
+
     showDialog(
       context: context,
-      builder: (dialogContext) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(22),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(26),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: signOutRed.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.logout_rounded,
-                  color: signOutRed,
-                  size: 36,
-                ),
-              ),
-              const SizedBox(height: 18),
-              const Text(
-                'Sign Out',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Are you sure you want to sign out from your account?',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: textSecondary,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 26),
-              Row(
-                children: [
-                  // Cancel
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(dialogContext),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        side: BorderSide(color: Colors.grey.shade300),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        'Cancel',
-                        style: TextStyle(
-                          color: textSecondary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+      builder:
+          (
+            dialogContext,
+          ) => StatefulBuilder(
+            builder:
+                (
+                  context,
+                  setDialogState,
+                ) => Dialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                      22,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  // Sign Out
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(dialogContext, rootNavigator: true)
-                            .pushAndRemoveUntil(
-                          MaterialPageRoute(
-                            builder: (_) => const LoginPage(),
-                          ),
-                          (route) => false,
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        backgroundColor: signOutRed,
-                        foregroundColor: Colors.white,
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        'Sign Out',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(
+                      26,
                     ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(
+                            18,
+                          ),
+                          decoration: BoxDecoration(
+                            color: signOutRed.withValues(
+                              alpha: 0.1,
+                            ),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.logout_rounded,
+                            color: signOutRed,
+                            size: 36,
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 18,
+                        ),
+                        const Text(
+                          'Sign Out',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: textPrimary,
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 8,
+                        ),
+                        Text(
+                          _logoutFromAllDevices
+                              ? 'Are you sure you want to sign out from all devices?'
+                              : 'Are you sure you want to sign out from your account?',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: textSecondary,
+                            height: 1.5,
+                          ),
+                        ),
+
+                        if (errorText !=
+                            null) ...[
+                          const SizedBox(
+                            height: 12,
+                          ),
+                          Text(
+                            errorText!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: signOutRed,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+
+                        const SizedBox(
+                          height: 26,
+                        ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed:
+                                    isSigningOut
+                                    ? null
+                                    : () => Navigator.pop(
+                                        dialogContext,
+                                      ),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                  side: BorderSide(
+                                    color: Colors.grey.shade300,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      12,
+                                    ),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Cancel',
+                                  style: TextStyle(
+                                    color: textSecondary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(
+                              width: 12,
+                            ),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed:
+                                    isSigningOut
+                                    ? null
+                                    : () async {
+                                        setDialogState(
+                                          () {
+                                            isSigningOut = true;
+                                            errorText = null;
+                                          },
+                                        );
+
+                                        final result = await AuthService().logout(
+                                          fromAllDevices: _logoutFromAllDevices,
+                                        );
+
+                                        if (result
+                                            is! LogoutSuccess) {
+                                          setDialogState(
+                                            () {
+                                              isSigningOut = false;
+                                              errorText =
+                                                  result
+                                                      is LogoutNetworkError
+                                                  ? result.message
+                                                  : result
+                                                        is LogoutFailure
+                                                  ? result.message
+                                                  : 'Something went wrong, please try again';
+                                            },
+                                          );
+                                          return;
+                                        }
+
+                                        await AuthService().clearSession();
+                                        if (!mounted) {
+                                          return;
+                                        }
+
+                                        Navigator.of(
+                                          dialogContext,
+                                          rootNavigator: true,
+                                        ).pushAndRemoveUntil(
+                                          MaterialPageRoute(
+                                            builder:
+                                                (
+                                                  _,
+                                                ) => const LoginPage(),
+                                          ),
+                                          (
+                                            route,
+                                          ) => false,
+                                        );
+                                      },
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                  backgroundColor: signOutRed,
+                                  foregroundColor: Colors.white,
+                                  elevation: 2,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      12,
+                                    ),
+                                  ),
+                                ),
+                                child:
+                                    isSigningOut
+                                    ? const SizedBox(
+                                        height: 18,
+                                        width: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Text(
+                                        'Sign Out',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
-      ),
     );
   }
 }
