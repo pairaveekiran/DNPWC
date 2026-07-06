@@ -1,3 +1,4 @@
+
 import 'package:dnpwc/screen/dummy.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -40,7 +41,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => SinglePostCheckIn(scannedCode: code),
+          builder: (_) => Dummy(scannedCode: code),
         ),
       );
     }

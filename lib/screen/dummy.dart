@@ -1,29 +1,33 @@
 import 'package:flutter/material.dart';
 
-class SinglePostCheckIn extends StatefulWidget {
+class Dummy extends StatefulWidget {
   final String? scannedCode;
 
-  const SinglePostCheckIn({super.key, this.scannedCode});
+  const Dummy({super.key, this.scannedCode});
 
   @override
-  State<SinglePostCheckIn> createState() => _SinglePostCheckInState();
+  State<Dummy> createState() => _DummyState();
 }
 
-class _SinglePostCheckInState extends State<SinglePostCheckIn> {
+class _DummyState extends State<Dummy> {
   // ─── COLORS ───
   static const Color primaryBlue = Color(0xFF0D47A1);
+  static const Color darkBlue = Color(0xFF0A2E5C);
   static const Color accentBlue = Color(0xFF1976D2);
   static const Color lightBlueTint = Color(0xFFEEF4FF);
   static const Color bgColor = Color(0xFFF5F7FB);
   static const Color textGrey = Color(0xFF6B7BA4);
+  static const Color borderColor = Color(0xFFE1E8F0);
 
-  // ─── DEMO DATA ───
   late final String scannedCode;
+
+  final ScrollController _verticalScrollController = ScrollController();
+  final ScrollController _horizontalScrollController = ScrollController();
 
   final List<_PermitHolder> permitHolders = [
     _PermitHolder(
       sn: 1,
-      name: 'Ishwor Raj\nChalise',
+      name: 'Ishwor Raj Chalise',
       gender: 'Male',
       passport: '121212',
       country: 'Nepal',
@@ -39,13 +43,56 @@ class _SinglePostCheckInState extends State<SinglePostCheckIn> {
       contact: '9841234567',
       ticketType: 'Entry Permit',
     ),
+    _PermitHolder(
+      sn: 3,
+      name: 'Gita Thapa',
+      gender: 'Female',
+      passport: 'CD78901',
+      country: 'Nepal',
+      contact: '9801234567',
+      ticketType: 'Entry Permit',
+    ),
+    _PermitHolder(
+      sn: 4,
+      name: 'Ram Bahadur',
+      gender: 'Male',
+      passport: 'EF45678',
+      country: 'Nepal',
+      contact: '9812345678',
+      ticketType: 'Entry Permit',
+    ),
+    _PermitHolder(
+      sn: 5,
+      name: 'Hari Krishna',
+      gender: 'Male',
+      passport: 'GH11223',
+      country: 'India',
+      contact: '9823456789',
+      ticketType: 'Entry Permit',
+    ),
+  ];
+
+  final List<_StatItem> stats = [
+    _StatItem(icon: Icons.male_rounded, label: 'Male', count: '1'),
+    _StatItem(icon: Icons.female_rounded, label: 'Female', count: '1'),
+    _StatItem(icon: Icons.groups_rounded, label: 'Other', count: '1'),
+    _StatItem(icon: Icons.directions_car_rounded, label: 'Vehicle', count: '1'),
+    _StatItem(icon: Icons.flag_rounded, label: 'Nepali', count: '1'),
+    _StatItem(icon: Icons.public_rounded, label: 'Saarc', count: '1'),
+    _StatItem(icon: Icons.language_rounded, label: 'Foreigner', count: '1'),
   ];
 
   @override
   void initState() {
     super.initState();
-    // Use the scanned code passed from QR Scanner, or fallback to demo value
     scannedCode = widget.scannedCode ?? "ONNqEshLD10";
+  }
+
+  @override
+  void dispose() {
+    _verticalScrollController.dispose();
+    _horizontalScrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -56,16 +103,18 @@ class _SinglePostCheckInState extends State<SinglePostCheckIn> {
         children: [
           _buildHeader(),
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(14, 14, 14, 20),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildScannedCodeCard(),
                   const SizedBox(height: 12),
-                  _buildSummaryCard(),
+                  _buildStatsGrid(),
                   const SizedBox(height: 12),
-                  _buildPermitHolderCard(),
+                  Expanded(
+                    child: _buildPermitHolderCard(),
+                  ),
                 ],
               ),
             ),
@@ -80,11 +129,17 @@ class _SinglePostCheckInState extends State<SinglePostCheckIn> {
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      color: primaryBlue,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [darkBlue, primaryBlue],
+        ),
+      ),
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(8, 8, 16, 20),
+          padding: const EdgeInsets.fromLTRB(8, 6, 16, 18),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -96,13 +151,12 @@ class _SinglePostCheckInState extends State<SinglePostCheckIn> {
                 ),
                 onPressed: () => Navigator.pop(context),
               ),
-              const SizedBox(width: 4),
               const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Single Post Check-in',
+                      'Mark Check-in',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 20,
@@ -110,12 +164,12 @@ class _SinglePostCheckInState extends State<SinglePostCheckIn> {
                         letterSpacing: 0.3,
                       ),
                     ),
-                    SizedBox(height: 3),
+                    SizedBox(height: 2),
                     Text(
                       'Verify and check-in permit holder',
                       style: TextStyle(
                         color: Colors.white70,
-                        fontSize: 13,
+                        fontSize: 12.5,
                         fontWeight: FontWeight.w400,
                       ),
                     ),
@@ -133,17 +187,7 @@ class _SinglePostCheckInState extends State<SinglePostCheckIn> {
   Widget _buildScannedCodeCard() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: _cardDecoration(),
       child: Row(
         children: [
           Expanded(
@@ -154,8 +198,9 @@ class _SinglePostCheckInState extends State<SinglePostCheckIn> {
                   'Scanned Code',
                   style: TextStyle(
                     color: accentBlue,
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: FontWeight.w700,
+                    letterSpacing: 0.2,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -171,79 +216,139 @@ class _SinglePostCheckInState extends State<SinglePostCheckIn> {
               ],
             ),
           ),
-          const Icon(
-            Icons.qr_code_scanner_rounded,
-            color: accentBlue,
-            size: 32,
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: lightBlueTint,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.qr_code_scanner_rounded,
+              color: accentBlue,
+              size: 24,
+            ),
           ),
         ],
       ),
     );
   }
 
-  // ─── SUMMARY CARD ───
-  Widget _buildSummaryCard() {
+  // ─── STATS GRID (WITH ICON + TIGHT SPACING) ───
+  Widget _buildStatsGrid() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+      decoration: _cardDecoration(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ─── SUMMARY TITLE ROW WITH ICON ───
+          Row(
+            children: [
+              const Icon(
+                Icons.analytics_rounded,
+                color: accentBlue,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'Summary',
+                style: TextStyle(
+                  color: accentBlue,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const Spacer(),
+              // ─── Total count badge  ───
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 3,
+                ),
+                decoration: BoxDecoration(
+                  color: lightBlueTint,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  '7 categories',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: accentBlue,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          //const SizedBox(height: 10),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: stats.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              childAspectRatio: 2.0,
+            ),
+            itemBuilder: (context, index) {
+              return _buildStatGridItem(stats[index]);
+            },
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStatGridItem(_StatItem stat) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 3),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: borderColor, width: 1),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          _buildSummaryItem(Icons.person_rounded, 'Male', '1'),
-          _buildSummaryItem(Icons.person_rounded, 'Female', '1'),
-          _buildSummaryItem(Icons.groups_rounded, 'Other', '1'),
-          _buildSummaryItem(Icons.directions_car_rounded, 'Vehicle', '1'),
+          Container(
+            width: 32,
+            height: 32,
+            decoration: const BoxDecoration(
+              color: lightBlueTint,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(stat.icon, color: accentBlue, size: 17),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  stat.label,
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  stat.count,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: textGrey,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSummaryItem(IconData icon, String label, String count) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 36,
-          height: 36,
-          decoration: const BoxDecoration(
-            color: lightBlueTint,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(icon, color: accentBlue, size: 20),
-        ),
-        const SizedBox(width: 8),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: Colors.black87,
-              ),
-            ),
-            Text(
-              count,
-              style: const TextStyle(
-                fontSize: 12,
-                color: textGrey,
-              ),
-            ),
-          ],
-        ),
-      ],
     );
   }
 
@@ -251,50 +356,84 @@ class _SinglePostCheckInState extends State<SinglePostCheckIn> {
   Widget _buildPermitHolderCard() {
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: _cardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Permit Holder Details',
-            style: TextStyle(
-              color: accentBlue,
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-            ),
+          Row(
+            children: [
+              const Icon(
+                Icons.people_alt_rounded,
+                color: accentBlue,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'Permit Holder Details',
+                style: TextStyle(
+                  color: accentBlue,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 3,
+                ),
+                decoration: BoxDecoration(
+                  color: lightBlueTint,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${permitHolders.length} holder${permitHolders.length > 1 ? 's' : ''}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: accentBlue,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: _buildTable(),
-          ),
-          const SizedBox(height: 14),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _buildStatChip(Icons.person_rounded, 'Male', '1'),
-                const SizedBox(width: 12),
-                _buildStatChip(Icons.person_rounded, 'Female', '1'),
-                const SizedBox(width: 12),
-                _buildStatChip(Icons.groups_rounded, 'Other', '1'),
-                const SizedBox(width: 12),
-                _buildStatChip(Icons.groups_rounded, 'Nepali', '2'),
-                const SizedBox(width: 12),
-                _buildStatChip(Icons.person_rounded, 'Saarc', '1'),
-                const SizedBox(width: 12),
-                _buildStatChip(Icons.person_rounded, 'Foreigner', '1'),
-              ],
+
+          // ─── SCROLLABLE TABLE with VISIBLE SIDE SCROLLBAR ───
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: borderColor),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Scrollbar(
+                  controller: _verticalScrollController,
+                  thumbVisibility: true,
+                  trackVisibility: true,
+                  thickness: 4,
+                  radius: const Radius.circular(8),
+                  child: SingleChildScrollView(
+                    controller: _verticalScrollController,
+                    scrollDirection: Axis.vertical,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: Scrollbar(
+                      controller: _horizontalScrollController,
+                      thumbVisibility: true,
+                      thickness: 6,
+                      radius: const Radius.circular(8),
+                      notificationPredicate: (notif) => notif.depth == 1,
+                      child: SingleChildScrollView(
+                        controller: _horizontalScrollController,
+                        scrollDirection: Axis.horizontal,
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: _buildTable(),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -304,91 +443,54 @@ class _SinglePostCheckInState extends State<SinglePostCheckIn> {
 
   // ─── DATA TABLE ───
   Widget _buildTable() {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFDCE4F0)),
-        borderRadius: BorderRadius.circular(8),
+    return DataTable(
+      columnSpacing: 22,
+      horizontalMargin: 14,
+      headingRowHeight: 44,
+      dataRowMinHeight: 52,
+      dataRowMaxHeight: 52,
+      headingRowColor: WidgetStateProperty.all(lightBlueTint),
+      dividerThickness: 1,
+      border: TableBorder.symmetric(
+        inside: const BorderSide(color: borderColor, width: 1),
       ),
-      child: DataTable(
-        columnSpacing: 20,
-        horizontalMargin: 12,
-        headingRowHeight: 42,
-        dataRowMinHeight: 50,
-        dataRowMaxHeight: 70,
-        headingRowColor: WidgetStateProperty.all(lightBlueTint),
-        dividerThickness: 1,
-        border: TableBorder.symmetric(
-          inside: const BorderSide(color: Color(0xFFDCE4F0), width: 1),
-        ),
-        columns: const [
-          DataColumn(label: _TableHeader('S.N')),
-          DataColumn(label: _TableHeader('Name')),
-          DataColumn(label: _TableHeader('Gender')),
-          DataColumn(label: _TableHeader('Passport No')),
-          DataColumn(label: _TableHeader('Country')),
-          DataColumn(label: _TableHeader('Contact No')),
-          DataColumn(label: _TableHeader('Ticket Type')),
-        ],
-        rows: permitHolders.map((holder) {
-          return DataRow(cells: [
-            DataCell(_TableCell(holder.sn.toString())),
-            DataCell(_TableCell(holder.name)),
-            DataCell(_TableCell(holder.gender)),
-            DataCell(_TableCell(holder.passport)),
-            DataCell(_TableCell(holder.country)),
-            DataCell(_TableCell(holder.contact)),
-            DataCell(_TableCell(holder.ticketType)),
-          ]);
-        }).toList(),
-      ),
-    );
-  }
-
-  // ─── STAT CHIP ───
-  Widget _buildStatChip(IconData icon, String label, String count) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 32,
-          height: 32,
-          decoration: const BoxDecoration(
-            color: lightBlueTint,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(icon, color: accentBlue, size: 18),
-        ),
-        const SizedBox(width: 6),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: Colors.black87,
-              ),
-            ),
-            Text(
-              count,
-              style: const TextStyle(
-                fontSize: 11,
-                color: textGrey,
-              ),
-            ),
-          ],
-        ),
+      columns: const [
+        DataColumn(label: _TableHeader('S.N')),
+        DataColumn(label: _TableHeader('Name')),
+        DataColumn(label: _TableHeader('Gender')),
+        DataColumn(label: _TableHeader('Passport No')),
+        DataColumn(label: _TableHeader('Country')),
+        DataColumn(label: _TableHeader('Contact No')),
+        DataColumn(label: _TableHeader('Ticket Type')),
       ],
+      rows: permitHolders.map((holder) {
+        return DataRow(cells: [
+          DataCell(_TableCell(holder.sn.toString())),
+          DataCell(_TableCell(holder.name)),
+          DataCell(_TableCell(holder.gender)),
+          DataCell(_TableCell(holder.passport)),
+          DataCell(_TableCell(holder.country)),
+          DataCell(_TableCell(holder.contact)),
+          DataCell(_TableCell(holder.ticketType)),
+        ]);
+      }).toList(),
     );
   }
 
   // ─── BOTTOM ACTION BUTTONS ───
   Widget _buildBottomActions() {
     return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, -3),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 16),
       child: SafeArea(
         top: false,
         child: Row(
@@ -396,7 +498,7 @@ class _SinglePostCheckInState extends State<SinglePostCheckIn> {
             Expanded(
               child: SizedBox(
                 height: 52,
-                child: ElevatedButton(
+                child: ElevatedButton.icon(
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -405,27 +507,21 @@ class _SinglePostCheckInState extends State<SinglePostCheckIn> {
                       ),
                     );
                   },
+                  icon: const Icon(Icons.check_rounded, size: 20),
+                  label: const Text(
+                    'Check-in',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryBlue,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Check-in',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      SizedBox(width: 8),
-                      Icon(Icons.check_rounded, size: 20),
-                    ],
                   ),
                 ),
               ),
@@ -434,7 +530,7 @@ class _SinglePostCheckInState extends State<SinglePostCheckIn> {
             Expanded(
               child: SizedBox(
                 height: 52,
-                child: OutlinedButton(
+                child: OutlinedButton.icon(
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -443,26 +539,20 @@ class _SinglePostCheckInState extends State<SinglePostCheckIn> {
                       ),
                     );
                   },
+                  icon: const Icon(Icons.logout_rounded, size: 20),
+                  label: const Text(
+                    'Check-out',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: primaryBlue,
                     side: const BorderSide(color: primaryBlue, width: 1.5),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Check-out',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      SizedBox(width: 8),
-                      Icon(Icons.logout_rounded, size: 20),
-                    ],
                   ),
                 ),
               ),
@@ -472,9 +562,36 @@ class _SinglePostCheckInState extends State<SinglePostCheckIn> {
       ),
     );
   }
+
+  // ─── REUSABLE CARD DECORATION ───
+  BoxDecoration _cardDecoration() {
+    return BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      boxShadow: [
+        BoxShadow(
+          color: darkBlue.withValues(alpha: 0.05),
+          blurRadius: 10,
+          offset: const Offset(0, 3),
+        ),
+      ],
+    );
+  }
 }
 
-// ─── DATA MODEL ───
+// ─── MODELS ───
+class _StatItem {
+  final IconData icon;
+  final String label;
+  final String count;
+
+  _StatItem({
+    required this.icon,
+    required this.label,
+    required this.count,
+  });
+}
+
 class _PermitHolder {
   final int sn;
   final String name;
@@ -495,7 +612,7 @@ class _PermitHolder {
   });
 }
 
-// ─── TABLE HEADER CELL ───
+// ─── TABLE CELLS ───
 class _TableHeader extends StatelessWidget {
   final String text;
   const _TableHeader(this.text);
@@ -505,15 +622,15 @@ class _TableHeader extends StatelessWidget {
     return Text(
       text,
       style: const TextStyle(
-        fontSize: 13,
+        fontSize: 12.5,
         fontWeight: FontWeight.w800,
-        color: Colors.black87,
+        color: Color(0xFF1A2547),
+        letterSpacing: 0.2,
       ),
     );
   }
 }
 
-// ─── TABLE DATA CELL ───
 class _TableCell extends StatelessWidget {
   final String text;
   const _TableCell(this.text);
