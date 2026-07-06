@@ -76,6 +76,9 @@ class _ProfilePageState
       false;
   String?
   _errorMessage;
+  bool
+  _logoutFromAllDevices =
+      false;
 
   @override
   void
@@ -262,6 +265,10 @@ class _ProfilePageState
                         ),
                         const SizedBox(
                           height: 28,
+                        ),
+                        _buildLogoutAllDevicesOption(),
+                        const SizedBox(
+                          height: 12,
                         ),
                         _buildSignOutButton(
                           context,
@@ -764,6 +771,46 @@ class _ProfilePageState
   }
 
   Widget
+  _buildLogoutAllDevicesOption() {
+    return Row(
+      children: [
+        Checkbox(
+          value: _logoutFromAllDevices,
+          activeColor: signOutRed,
+          onChanged: (
+            value,
+          ) {
+            setState(
+              () {
+                _logoutFromAllDevices = value ?? false;
+              },
+            );
+          },
+        ),
+        Expanded(
+          child: GestureDetector(
+            onTap: () {
+              setState(
+                () {
+                  _logoutFromAllDevices = !_logoutFromAllDevices;
+                },
+              );
+            },
+            child: const Text(
+              'Log out from all devices',
+              style: TextStyle(
+                fontSize: 14,
+                color: textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget
   _buildSignOutButton(
     BuildContext
     context,
@@ -817,148 +864,223 @@ class _ProfilePageState
     BuildContext
     context,
   ) {
+    bool
+    isSigningOut = false;
+    String?
+    errorText;
+
     showDialog(
       context: context,
       builder:
           (
             dialogContext,
-          ) => Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(
-                22,
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(
-                26,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
+          ) => StatefulBuilder(
+            builder:
+                (
+                  context,
+                  setDialogState,
+                ) => Dialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                      22,
+                    ),
+                  ),
+                  child: Padding(
                     padding: const EdgeInsets.all(
-                      18,
+                      26,
                     ),
-                    decoration: BoxDecoration(
-                      color: signOutRed.withValues(
-                        alpha: 0.1,
-                      ),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.logout_rounded,
-                      color: signOutRed,
-                      size: 36,
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 18,
-                  ),
-                  const Text(
-                    'Sign Out',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: textPrimary,
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 8,
-                  ),
-                  const Text(
-                    'Are you sure you want to sign out from your account?',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: textSecondary,
-                      height: 1.5,
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 26,
-                  ),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.pop(
-                            dialogContext,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(
+                            18,
                           ),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 14,
+                          decoration: BoxDecoration(
+                            color: signOutRed.withValues(
+                              alpha: 0.1,
                             ),
-                            side: BorderSide(
-                              color: Colors.grey.shade300,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                12,
-                              ),
-                            ),
+                            shape: BoxShape.circle,
                           ),
-                          child: const Text(
-                            'Cancel',
-                            style: TextStyle(
-                              color: textSecondary,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          child: const Icon(
+                            Icons.logout_rounded,
+                            color: signOutRed,
+                            size: 36,
                           ),
                         ),
-                      ),
-                      const SizedBox(
-                        width: 12,
-                      ),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            await AuthService().clearSession();
-                            if (!mounted) {
-                              return;
-                            }
+                        const SizedBox(
+                          height: 18,
+                        ),
+                        const Text(
+                          'Sign Out',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: textPrimary,
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 8,
+                        ),
+                        Text(
+                          _logoutFromAllDevices
+                              ? 'Are you sure you want to sign out from all devices?'
+                              : 'Are you sure you want to sign out from your account?',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: textSecondary,
+                            height: 1.5,
+                          ),
+                        ),
 
-                            Navigator.of(
-                              dialogContext,
-                              rootNavigator: true,
-                            ).pushAndRemoveUntil(
-                              MaterialPageRoute(
-                                builder:
-                                    (
-                                      _,
-                                    ) => const LoginPage(),
-                              ),
-                              (
-                                route,
-                              ) => false,
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 14,
-                            ),
-                            backgroundColor: signOutRed,
-                            foregroundColor: Colors.white,
-                            elevation: 2,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                12,
-                              ),
+                        if (errorText !=
+                            null) ...[
+                          const SizedBox(
+                            height: 12,
+                          ),
+                          Text(
+                            errorText!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: signOutRed,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                          child: const Text(
-                            'Sign Out',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
+                        ],
+
+                        const SizedBox(
+                          height: 26,
                         ),
-                      ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed:
+                                    isSigningOut
+                                    ? null
+                                    : () => Navigator.pop(
+                                        dialogContext,
+                                      ),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                  side: BorderSide(
+                                    color: Colors.grey.shade300,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      12,
+                                    ),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Cancel',
+                                  style: TextStyle(
+                                    color: textSecondary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(
+                              width: 12,
+                            ),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed:
+                                    isSigningOut
+                                    ? null
+                                    : () async {
+                                        setDialogState(
+                                          () {
+                                            isSigningOut = true;
+                                            errorText = null;
+                                          },
+                                        );
+
+                                        final result = await AuthService().logout(
+                                          fromAllDevices: _logoutFromAllDevices,
+                                        );
+
+                                        if (result
+                                            is! LogoutSuccess) {
+                                          setDialogState(
+                                            () {
+                                              isSigningOut = false;
+                                              errorText =
+                                                  result
+                                                      is LogoutNetworkError
+                                                  ? result.message
+                                                  : result
+                                                        is LogoutFailure
+                                                  ? result.message
+                                                  : 'Something went wrong, please try again';
+                                            },
+                                          );
+                                          return;
+                                        }
+
+                                        await AuthService().clearSession();
+                                        if (!mounted) {
+                                          return;
+                                        }
+
+                                        Navigator.of(
+                                          dialogContext,
+                                          rootNavigator: true,
+                                        ).pushAndRemoveUntil(
+                                          MaterialPageRoute(
+                                            builder:
+                                                (
+                                                  _,
+                                                ) => const LoginPage(),
+                                          ),
+                                          (
+                                            route,
+                                          ) => false,
+                                        );
+                                      },
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                  backgroundColor: signOutRed,
+                                  foregroundColor: Colors.white,
+                                  elevation: 2,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      12,
+                                    ),
+                                  ),
+                                ),
+                                child:
+                                    isSigningOut
+                                    ? const SizedBox(
+                                        height: 18,
+                                        width: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Text(
+                                        'Sign Out',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                              ),
+                            ),
                     ],
                   ),
                 ],
               ),
             ),
           ),
+        ),
     );
   }
 }

@@ -55,6 +55,38 @@ class LoginFailure
   message;
 }
 
+sealed class LogoutResult {
+  const LogoutResult();
+}
+
+class LogoutSuccess
+    extends
+        LogoutResult {
+  const LogoutSuccess();
+}
+
+class LogoutNetworkError
+    extends
+        LogoutResult {
+  const LogoutNetworkError(
+    this.message,
+  );
+
+  final String
+  message;
+}
+
+class LogoutFailure
+    extends
+        LogoutResult {
+  const LogoutFailure(
+    this.message,
+  );
+
+  final String
+  message;
+}
+
 class AuthService {
   AuthService({
     http.Client?
@@ -298,6 +330,98 @@ class AuthService {
     }
 
     return null;
+  }
+
+  Future<
+    LogoutResult
+  >
+  logout({
+    required bool
+    fromAllDevices,
+  }) async {
+    final baseUrl = AppConfig.baseUrl.replaceAll(
+      RegExp(
+        r'/$',
+      ),
+      '',
+    );
+    final endpoint =
+        fromAllDevices
+        ? 'logout-all'
+        : 'logout';
+    final uri = Uri.parse(
+      '$baseUrl/$endpoint',
+    );
+
+    try {
+      final token = await getToken();
+
+      final response = await _client
+          .post(
+            uri,
+            headers: <
+              String,
+              String
+            >{
+              'Accept': 'application/json',
+              if (token !=
+                  null)
+                'Authorization': 'Bearer $token',
+            },
+          )
+          .timeout(
+            const Duration(
+              seconds: 15,
+            ),
+          );
+
+      final payload = _decodeJsonObject(
+        response.body,
+      );
+
+      final message = _readMessage(
+        payload,
+        response.body,
+      );
+
+      if (response.statusCode >=
+              200 &&
+          response.statusCode <
+              300) {
+        return const LogoutSuccess();
+      }
+
+      return LogoutFailure(
+        message ??
+            'Something went wrong, please try again',
+      );
+    } on SocketException {
+      return const LogoutNetworkError(
+        'Check your internet connection',
+      );
+    } on TimeoutException {
+      return const LogoutNetworkError(
+        'Check your internet connection',
+      );
+    } on FormatException {
+      return const LogoutFailure(
+        'Something went wrong, please try again',
+      );
+    } on http.ClientException {
+      return const LogoutNetworkError(
+        'Check your internet connection',
+      );
+    } on TypeError {
+      return const LogoutFailure(
+        'Something went wrong, please try again',
+      );
+    } catch (
+      _
+    ) {
+      return const LogoutFailure(
+        'Something went wrong, please try again',
+      );
+    }
   }
 
   Future<

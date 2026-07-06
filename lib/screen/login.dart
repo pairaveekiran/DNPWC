@@ -69,8 +69,9 @@ class _LoginPageState
   /// Returns true if all inputs are valid, false otherwise.
   bool
   _validateInputs() {
-    if (!mounted)
+    if (!mounted) {
       return false;
+    }
 
     setState(() {
       _emailError = false;
@@ -139,8 +140,9 @@ class _LoginPageState
     void
   >
   _handleLogin() async {
-    if (!_validateInputs())
+    if (!_validateInputs()) {
       return;
+    }
 
     if (mounted) {
       setState(
@@ -154,8 +156,9 @@ class _LoginPageState
         _passwordController.text,
       );
 
-      if (!mounted)
+      if (!mounted) {
         return;
+      }
 
       if (result
           is LoginSuccess) {

@@ -9,14 +9,33 @@ import '../screen/qr_scanner.dart';
 
 class AppDrawer
     extends
-        StatelessWidget {
-  const AppDrawer({
+        StatefulWidget {
+  AppDrawer({
     super.key,
     this.userProfile,
   });
 
   final UserProfile?
   userProfile;
+
+  @override
+  State<
+    AppDrawer
+  >
+  createState() =>
+      _AppDrawerState();
+}
+
+class _AppDrawerState
+    extends
+        State<
+          AppDrawer
+        > {
+  // Local state for the checkbox (StatelessWidget, so it's held here
+  // and mutated via StatefulBuilder's setState in _buildLogoutButton)
+  bool
+  _logoutFromAllDevices =
+      false;
 
   // ─── COLORS ───
   static const Color
@@ -62,7 +81,7 @@ class AppDrawer
                   onTap: () => _navigateTo(
                     context,
                     ProfilePage(
-                      userProfile: userProfile,
+                      userProfile: widget.userProfile,
                     ),
                   ),
                 ),
@@ -265,7 +284,7 @@ class AppDrawer
 
           // User info
           Text(
-            userProfile?.name ??
+            widget.userProfile?.name ??
                 'Loading...',
             style: TextStyle(
               color: Colors.white,
@@ -277,7 +296,7 @@ class AppDrawer
             height: 4,
           ),
           Text(
-            userProfile?.email ??
+            widget.userProfile?.email ??
                 '',
             style: TextStyle(
               color: Colors.white.withValues(
@@ -441,68 +460,120 @@ class AppDrawer
           ),
         ),
       ),
-      child: Column(
-        children: [
-          InkWell(
-            onTap: () {
-              Navigator.pop(
-                context,
-              );
-              _showLogoutDialog(
-                context,
-              );
-            },
-            borderRadius: BorderRadius.circular(
-              10,
-            ),
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                vertical: 12,
-                horizontal: 16,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                borderRadius: BorderRadius.circular(
-                  10,
-                ),
-                border: Border.all(
-                  color: Colors.red.shade200,
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+      child: StatefulBuilder(
+        builder:
+            (
+              context,
+              setState,
+            ) {
+              return Column(
                 children: [
-                  Icon(
-                    Icons.logout,
-                    color: Colors.red.shade700,
-                    size: 20,
+                  // ─── LOG OUT FROM ALL DEVICES ───
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: _logoutFromAllDevices,
+                        activeColor: Colors.red.shade700,
+                        onChanged:
+                            (
+                              value,
+                            ) {
+                              setState(
+                                () {
+                                  _logoutFromAllDevices =
+                                      value ??
+                                      false;
+                                },
+                              );
+                            },
+                      ),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(
+                              () {
+                                _logoutFromAllDevices = !_logoutFromAllDevices;
+                              },
+                            );
+                          },
+                          child: Text(
+                            'Log out from all devices',
+                            style: TextStyle(
+                              color: Colors.grey.shade700,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(
-                    width: 8,
+                    height: 6,
+                  ),
+
+                  InkWell(
+                    onTap: () {
+                      Navigator.pop(
+                        context,
+                      );
+                      _showLogoutDialog(
+                        context,
+                        _logoutFromAllDevices,
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(
+                      10,
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 12,
+                        horizontal: 16,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(
+                          10,
+                        ),
+                        border: Border.all(
+                          color: Colors.red.shade200,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.logout,
+                            color: Colors.red.shade700,
+                            size: 20,
+                          ),
+                          const SizedBox(
+                            width: 8,
+                          ),
+                          Text(
+                            'Logout',
+                            style: TextStyle(
+                              color: Colors.red.shade700,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 10,
                   ),
                   Text(
-                    'Logout',
+                    'Version 1.0.0',
                     style: TextStyle(
-                      color: Colors.red.shade700,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade500,
+                      fontSize: 11,
                     ),
                   ),
                 ],
-              ),
-            ),
-          ),
-          const SizedBox(
-            height: 10,
-          ),
-          Text(
-            'Version 1.0.0',
-            style: TextStyle(
-              color: Colors.grey.shade500,
-              fontSize: 11,
-            ),
-          ),
-        ],
+              );
+            },
       ),
     );
   }
@@ -512,152 +583,227 @@ class AppDrawer
   _showLogoutDialog(
     BuildContext
     context,
+    bool
+    logoutFromAllDevices,
   ) {
+    bool
+    isLoggingOut =
+        false;
+    String?
+    errorText;
+
     showDialog(
       context: context,
       builder:
           (
             dialogContext,
-          ) => Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(
-                20,
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(
-                24,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Icon
-                  Container(
+          ) => StatefulBuilder(
+            builder:
+                (
+                  context,
+                  setDialogState,
+                ) => Dialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                      20,
+                    ),
+                  ),
+                  child: Padding(
                     padding: const EdgeInsets.all(
-                      16,
+                      24,
                     ),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.logout,
-                      color: Colors.red.shade700,
-                      size: 36,
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 16,
-                  ),
-
-                  // Title
-                  const Text(
-                    'Logout',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 8,
-                  ),
-
-                  // Message
-                  const Text(
-                    'Are you sure you want to logout from your account?',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.black54,
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 20,
-                  ),
-
-                  // Buttons
-                  Row(
-                    children: [
-                      // Cancel
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.pop(
-                            dialogContext,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Icon
+                        Container(
+                          padding: const EdgeInsets.all(
+                            16,
                           ),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 12,
-                            ),
-                            side: BorderSide(
-                              color: Colors.grey.shade400,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                8,
-                              ),
-                            ),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade50,
+                            shape: BoxShape.circle,
                           ),
-                          child: const Text(
-                            'Cancel',
-                            style: TextStyle(
-                              color: Colors.black87,
-                            ),
+                          child: Icon(
+                            Icons.logout,
+                            color: Colors.red.shade700,
+                            size: 36,
                           ),
                         ),
-                      ),
-                      const SizedBox(
-                        width: 12,
-                      ),
+                        const SizedBox(
+                          height: 16,
+                        ),
 
-                      // Confirm Logout → Navigate to LoginPage
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            await AuthService().clearSession();
-                            if (!context.mounted) {
-                              return;
-                            }
-
-                            Navigator.of(
-                              dialogContext,
-                              rootNavigator: true,
-                            ).pushAndRemoveUntil(
-                              MaterialPageRoute(
-                                builder:
-                                    (
-                                      _,
-                                    ) => const LoginPage(),
-                              ),
-                              (
-                                route,
-                              ) => false,
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 12,
-                            ),
-                            backgroundColor: Colors.red.shade700,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                8,
-                              ),
-                            ),
-                          ),
-                          child: const Text(
-                            'Logout',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                            ),
+                        // Title
+                        const Text(
+                          'Logout',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(
+                          height: 8,
+                        ),
+
+                        // Message
+                        Text(
+                          logoutFromAllDevices
+                              ? 'Are you sure you want to logout from all devices?'
+                              : 'Are you sure you want to logout from your account?',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.black54,
+                          ),
+                        ),
+
+                        if (errorText !=
+                            null) ...[
+                          const SizedBox(
+                            height: 12,
+                          ),
+                          Text(
+                            errorText!,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.red.shade700,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+
+                        const SizedBox(
+                          height: 20,
+                        ),
+
+                        // Buttons
+                        Row(
+                          children: [
+                            // Cancel
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: isLoggingOut
+                                    ? null
+                                    : () => Navigator.pop(
+                                        dialogContext,
+                                      ),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  side: BorderSide(
+                                    color: Colors.grey.shade400,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      8,
+                                    ),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Cancel',
+                                  style: TextStyle(
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(
+                              width: 12,
+                            ),
+
+                            // Confirm Logout → call API, then clear session & navigate
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: isLoggingOut
+                                    ? null
+                                    : () async {
+                                        setDialogState(
+                                          () {
+                                            isLoggingOut = true;
+                                            errorText = null;
+                                          },
+                                        );
+
+                                        final result = await AuthService().logout(
+                                          fromAllDevices: logoutFromAllDevices,
+                                        );
+
+                                        if (result
+                                            is! LogoutSuccess) {
+                                          setDialogState(
+                                            () {
+                                              isLoggingOut = false;
+                                              errorText =
+                                                  result
+                                                      is LogoutNetworkError
+                                                  ? result.message
+                                                  : result
+                                                        is LogoutFailure
+                                                  ? result.message
+                                                  : 'Something went wrong, please try again';
+                                            },
+                                          );
+                                          return;
+                                        }
+
+                                        await AuthService().clearSession();
+                                        if (!context.mounted) {
+                                          return;
+                                        }
+
+                                        Navigator.of(
+                                          dialogContext,
+                                          rootNavigator: true,
+                                        ).pushAndRemoveUntil(
+                                          MaterialPageRoute(
+                                            builder:
+                                                (
+                                                  _,
+                                                ) => const LoginPage(),
+                                          ),
+                                          (
+                                            route,
+                                          ) => false,
+                                        );
+                                      },
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  backgroundColor: Colors.red.shade700,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      8,
+                                    ),
+                                  ),
+                                ),
+                                child: isLoggingOut
+                                    ? const SizedBox(
+                                        height: 18,
+                                        width: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Text(
+                                        'Logout',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ),
-            ),
+                ),
           ),
     );
   }
