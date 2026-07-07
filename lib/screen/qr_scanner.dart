@@ -49,7 +49,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
         Navigator.pop(context, code);
       } else {
         // Online mode: navigate to Dummy screen
-        Navigator.pushReplacement(
+        Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => Dummy(scannedCode: code),
