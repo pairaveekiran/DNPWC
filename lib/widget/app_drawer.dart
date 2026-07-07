@@ -10,7 +10,7 @@ import '../screen/qr_scanner.dart';
 class AppDrawer
     extends
         StatefulWidget {
-  AppDrawer({
+  const AppDrawer({
     super.key,
     this.userProfile,
   });

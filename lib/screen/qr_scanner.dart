@@ -5,7 +5,12 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 
 
 class QRScannerScreen extends StatefulWidget {
-  const QRScannerScreen({super.key});
+  /// Optional callback invoked with the scanned code.
+  /// When provided, the scanner pops itself with the code instead of
+  /// navigating to DummyScreen (used for offline scan flow).
+  final void Function(String code)? onScanned;
+
+  const QRScannerScreen({super.key, this.onScanned});
 
   @override
   State<QRScannerScreen> createState() => _QRScannerScreenState();
@@ -37,13 +42,20 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
       // Stop camera before navigating
       _cameraController.stop();
 
-      // ─── NAVIGATE TO DUMMY SCREEN ───
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => Dummy(scannedCode: code),
-        ),
-      );
+      // ─── HANDLE SCANNED RESULT ───
+      if (widget.onScanned != null) {
+        // Offline mode: invoke callback and pop back
+        widget.onScanned!(code);
+        Navigator.pop(context, code);
+      } else {
+        // Online mode: navigate to Dummy screen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => Dummy(scannedCode: code),
+          ),
+        );
+      }
     }
   }
 

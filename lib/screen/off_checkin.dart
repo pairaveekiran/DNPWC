@@ -86,41 +86,24 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
     }
   }
 
-  // ─── HANDLE QR FAB TAP ───
-  void _onScanFabPressed() {
+  // ─── OPEN QR SCANNER (offline) ───
+  void _openScanner() {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const QRScannerScreen(),
-      ),
-    ).then((result) {
-      // If scanner returned a code, update state
-      if (result != null && result is String && result.isNotEmpty && mounted) {
-        setState(() {
-          scannedCode = result;
-          _scannedAt = DateTime.now();
-          selectedAction = null;
-        });
-      }
-    });
-  }
-
-  // ─── OPEN REAL QR SCANNER ───
-  Future<void> _openScanner() async {
-    final result = await Navigator.push<String>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const QRScannerScreen(),
+        builder: (context) => QRScannerScreen(
+          onScanned: (code) {
+            if (mounted) {
+              setState(() {
+                scannedCode = code;
+                _scannedAt = DateTime.now();
+                selectedAction = null;
+              });
+            }
+          },
+        ),
       ),
     );
-
-    if (result != null && result.isNotEmpty && mounted) {
-      setState(() {
-        scannedCode = result;
-        _scannedAt = DateTime.now();
-        selectedAction = null;
-      });
-    }
   }
 
   // ─── HANDLE CHECK IN / OUT ───
@@ -321,12 +304,12 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
       bottomNavigationBar: CustomBottomNav(
         currentIndex: _currentNavIndex,
         onTabSelected: _onTabSelected,
-        onScanPressed: _onScanFabPressed,
+        onScanPressed: _openScanner,
       ),
 
       // ─── FLOATING QR SCANNER BUTTON ───
       floatingActionButton: ScanFab(
-        onPressed: _onScanFabPressed,
+        onPressed: _openScanner,
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
