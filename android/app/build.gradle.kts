@@ -19,6 +19,7 @@ android {
         applicationId = "com.example.dnpwc"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
+        // minSdk = 23 required by mobile_scanner 7.2.0 (CameraX/ML Kit on Android)
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -30,6 +31,15 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+
+            // Enable R8 code shrinking + ProGuard keep rules.
+            // Required so that mobile_scanner's CameraX/ML Kit classes
+            // (accessed via reflection) are not stripped in release builds.
+            isMinifyEnabled = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }
