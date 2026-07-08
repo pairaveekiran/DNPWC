@@ -161,30 +161,6 @@ class _ProfilePageState
     });
   }
 
-  Future<
-    void
-  >
-  _signOut() async {
-    await AuthService().clearSession();
-    if (!mounted) {
-      return;
-    }
-
-    Navigator.of(
-      context,
-    ).pushAndRemoveUntil(
-      MaterialPageRoute(
-        builder:
-            (
-              _,
-            ) => const LoginPage(),
-      ),
-      (
-        route,
-      ) => false,
-    );
-  }
-
   @override
   Widget
   build(

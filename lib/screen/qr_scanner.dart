@@ -29,7 +29,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
     super.dispose();
   }
 
-  // ─── HANDLE QR DETECTION ───
+  // ─── HANDLE QR DETECTION ─── 
   void _onDetect(BarcodeCapture capture) {
     if (_isScanned) return;
 
