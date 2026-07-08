@@ -4,8 +4,9 @@ import 'package:dnpwc/services/checkin_service.dart';
 
 class Dummy extends StatefulWidget {
   final String? scannedCode;
+  final DateTime? scannedAt;
 
-  const Dummy({super.key, this.scannedCode});
+  const Dummy({super.key, this.scannedCode, this.scannedAt});
 
   @override
   State<Dummy> createState() => _DummyState();
@@ -21,8 +22,11 @@ class _DummyState extends State<Dummy> {
   static const Color borderColor = Color(0xFFE1E8F0);
 
   late final String scannedCode;
+  late final String formattedScannedAt;
 
   bool _isLoading = true;
+  bool _isSubmitting = false;
+  bool _hasBeenCheckedIn = false;
   String? _errorMessage;
   String? _debugInfo;
   List<_StatItem> _stats = [];
@@ -35,6 +39,9 @@ class _DummyState extends State<Dummy> {
   void initState() {
     super.initState();
     scannedCode = widget.scannedCode ?? '';
+    final scanTime = widget.scannedAt ?? DateTime.now();
+    formattedScannedAt =
+        '${scanTime.year}-${_pad(scanTime.month)}-${_pad(scanTime.day)} ${_pad(scanTime.hour)}:${_pad(scanTime.minute)}';
     if (scannedCode.isEmpty) {
       _isLoading = false;
       _errorMessage = 'No scanned code provided';
@@ -42,6 +49,8 @@ class _DummyState extends State<Dummy> {
       _fetchPermitDetails();
     }
   }
+
+  String _pad(int n) => n.toString().padLeft(2, '0');
 
   @override
   void dispose() {
@@ -78,6 +87,8 @@ class _DummyState extends State<Dummy> {
       final summary = response.summary;
 
       final List<_StatItem> stats = [];
+      _hasBeenCheckedIn = response.hasBeenCheckedIn;
+
       if (summary != null) {
         if (summary.male >= 1) {
           stats.add(_StatItem(icon: Icons.male_rounded, label: 'Male', count: '${summary.male}'));
@@ -159,6 +170,67 @@ class _DummyState extends State<Dummy> {
         _errorMessage = result.message;
         _debugInfo = 'URL: $debugUrl\nScanned: $scannedCode\nError: API Failure';
       });
+    }
+  }
+
+  Future<void> _checkInOut({required int direction, required String remark}) async {
+    if (_isSubmitting) return;
+
+    setState(() => _isSubmitting = true);
+
+    final service = CheckinService();
+    final result = await service.performCheckInOut(
+      code: scannedCode,
+      direction: direction,
+      loggedAt: formattedScannedAt,
+      remark: remark,
+    );
+
+    if (!mounted) return;
+
+    setState(() => _isSubmitting = false);
+
+    if (result is CheckinSuccess) {
+      setState(() => _hasBeenCheckedIn = true);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.response.message),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } else if (result is CheckinUnauthorized) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Session expired. Please log in again.'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } else if (result is CheckinNetworkError) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.message),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } else if (result is CheckinFailure) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.message),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -476,6 +548,9 @@ class _DummyState extends State<Dummy> {
   }
 
   Widget _buildBottomActions() {
+    final bool canCheckIn = !_isSubmitting && !_hasBeenCheckedIn;
+    final bool canCheckOut = !_isSubmitting && _hasBeenCheckedIn;
+
     return Container(
       decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 10, offset: const Offset(0, -3))]),
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 16),
@@ -487,10 +562,27 @@ class _DummyState extends State<Dummy> {
               child: SizedBox(
                 height: 52,
                 child: ElevatedButton.icon(
-                  onPressed: () { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Checked in successfully'), behavior: SnackBarBehavior.floating)); },
-                  icon: const Icon(Icons.check_rounded, size: 20),
-                  label: const Text('Check-in', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
-                  style: ElevatedButton.styleFrom(backgroundColor: primaryBlue, foregroundColor: Colors.white, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                  onPressed: canCheckIn
+                      ? () => _checkInOut(direction: 1, remark: 'Checked in')
+                      : null,
+                  icon: _isSubmitting
+                      ? const SizedBox(
+                          width: 20, height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Icon(Icons.check_rounded, size: 20),
+                  label: Text(
+                    _isSubmitting ? 'Processing...' : 'Check-in',
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _hasBeenCheckedIn ? Colors.grey : primaryBlue,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    disabledBackgroundColor: Colors.grey.shade300,
+                    disabledForegroundColor: Colors.white70,
+                  ),
                 ),
               ),
             ),
@@ -499,10 +591,25 @@ class _DummyState extends State<Dummy> {
               child: SizedBox(
                 height: 52,
                 child: OutlinedButton.icon(
-                  onPressed: () { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Checked out'), behavior: SnackBarBehavior.floating)); },
-                  icon: const Icon(Icons.logout_rounded, size: 20),
-                  label: const Text('Check-out', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
-                  style: OutlinedButton.styleFrom(foregroundColor: primaryBlue, side: const BorderSide(color: primaryBlue, width: 1.5), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                  onPressed: canCheckOut
+                      ? () => _checkInOut(direction: 0, remark: 'Checked out')
+                      : null,
+                  icon: _isSubmitting
+                      ? const SizedBox(
+                          width: 20, height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: primaryBlue),
+                        )
+                      : const Icon(Icons.logout_rounded, size: 20),
+                  label: Text(
+                    _isSubmitting ? 'Processing...' : 'Check-out',
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: primaryBlue,
+                    side: BorderSide(color: _hasBeenCheckedIn ? primaryBlue : Colors.grey.shade300, width: 1.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    disabledForegroundColor: Colors.grey.shade400,
+                  ),
                 ),
               ),
             ),

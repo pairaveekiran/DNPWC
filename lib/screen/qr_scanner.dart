@@ -48,11 +48,12 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
         widget.onScanned!(code);
         Navigator.pop(context, code);
       } else {
-        // Online mode: navigate to Dummy screen
+        // Online mode: navigate to Dummy screen with scan timestamp
+        final scanTimestamp = DateTime.now();
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => Dummy(scannedCode: code),
+            builder: (_) => Dummy(scannedCode: code, scannedAt: scanTimestamp),
           ),
         );
       }
