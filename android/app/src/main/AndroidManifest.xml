@@ -3,7 +3,7 @@
 <uses-permission android:name="android.permission.CAMERA"/>
 <uses-permission android:name="android.permission.FLASHLIGHT"/>
     <application
-        android:label="dnpwc"
+        android:label="DNPWC"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:requestLegacyExternalStorage="true">
