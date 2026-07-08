@@ -1,5 +1,6 @@
 import 'package:dnpwc/models/user_profile.dart';
 import 'package:dnpwc/screen/notices.dart';
+import 'package:dnpwc/screen/report.dart';
 import 'package:dnpwc/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import '../screen/login.dart';
@@ -131,9 +132,9 @@ class _AppDrawerState
                   context: context,
                   icon: Icons.article_outlined,
                   title: 'Reports',
-                  onTap: () => Navigator.pop(
+                  onTap: () => _navigateTo(
                     context,
-                  ),
+                    ReportPage(), ),
                 ),
                 _buildMenuItem(
                   context: context,

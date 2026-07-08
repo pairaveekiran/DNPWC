@@ -2,9 +2,10 @@ import 'package:dnpwc/screen/notices.dart';
 import 'package:dnpwc/widget/bottom_nav.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import 'qr_scanner.dart';
 import 'home.dart';
-
 
 class OfflineScanScreen extends StatefulWidget {
   const OfflineScanScreen({super.key});
@@ -27,6 +28,28 @@ class ScannedPermitRecord {
     this.syncStatus = "pending",
     this.errorMessage,
   });
+
+  // ─── CONVERT TO JSON ───
+  Map<String, dynamic> toJson() {
+    return {
+      'code': code,
+      'direction': direction,
+      'timestamp': timestamp.toIso8601String(),
+      'syncStatus': syncStatus,
+      'errorMessage': errorMessage,
+    };
+  }
+
+  // ─── CREATE FROM JSON ───
+  factory ScannedPermitRecord.fromJson(Map<String, dynamic> json) {
+    return ScannedPermitRecord(
+      code: json['code'] as String,
+      direction: json['direction'] as int,
+      timestamp: DateTime.parse(json['timestamp'] as String),
+      syncStatus: json['syncStatus'] as String? ?? 'pending',
+      errorMessage: json['errorMessage'] as String?,
+    );
+  }
 }
 
 class _OfflineScanScreenState extends State<OfflineScanScreen>
@@ -35,17 +58,20 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
   static const Color lightBlue = Color(0xFF0D47A1);
   static const Color accentBlue = Color(0xFF1976D2);
 
+  // ─── SHARED PREFERENCES KEY ───
+  static const String _storageKey = 'offline_scanned_permits';
+
   String? scannedCode;
   String? selectedAction;
   DateTime? _scannedAt;
   bool _isSyncing = false;
   bool _isSelectionMode = false;
+  bool _isLoading = true;
   final Set<int> _selectedIndexes = {};
   final List<ScannedPermitRecord> _scannedPermits = [];
 
   late AnimationController _syncIconController;
 
-  // Bottom nav current index (1 = Check-in since we're on this screen)
   int _currentNavIndex = 1;
 
   @override
@@ -55,6 +81,8 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
       vsync: this,
       duration: const Duration(seconds: 1),
     );
+    // ─── LOAD SAVED RECORDS ON STARTUP ───
+    _loadRecordsFromStorage();
   }
 
   @override
@@ -63,30 +91,80 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
     super.dispose();
   }
 
+  // ─── LOAD RECORDS FROM SHARED PREFERENCES ───
+  Future<void> _loadRecordsFromStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? jsonString = prefs.getString(_storageKey);
+
+      if (jsonString != null && jsonString.isNotEmpty) {
+        final List<dynamic> jsonList = jsonDecode(jsonString);
+        final List<ScannedPermitRecord> loaded = jsonList
+            .map((item) =>
+                ScannedPermitRecord.fromJson(item as Map<String, dynamic>))
+            .toList();
+
+        if (mounted) {
+          setState(() {
+            _scannedPermits.clear();
+            _scannedPermits.addAll(loaded);
+            _isLoading = false;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading records: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  // ─── SAVE RECORDS TO SHARED PREFERENCES ───
+  Future<void> _saveRecordsToStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final List<Map<String, dynamic>> jsonList =
+          _scannedPermits.map((r) => r.toJson()).toList();
+      final String jsonString = jsonEncode(jsonList);
+      await prefs.setString(_storageKey, jsonString);
+    } catch (e) {
+      debugPrint('Error saving records: $e');
+    }
+  }
+
+  // ─── CLEAR ALL STORAGE ───
+  Future<void> _clearStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_storageKey);
+    } catch (e) {
+      debugPrint('Error clearing storage: $e');
+    }
+  }
+
   // ─── HANDLE BOTTOM NAV TAP ───
   void _onTabSelected(int index) {
     if (index == _currentNavIndex) return;
-
     setState(() => _currentNavIndex = index);
-
     switch (index) {
       case 0:
-        // Navigate to Notification screen
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(
-            builder: (context) => const NoticesPage(),
-          ),
+          MaterialPageRoute(builder: (context) => const NoticesPage()),
           (route) => false,
         );
         break;
       case 1:
-        // Already on Check-in screen, do nothing
         break;
     }
   }
 
-  // ─── OPEN QR SCANNER (offline) ───
+  // ─── OPEN QR SCANNER ───
   void _openScanner() {
     Navigator.push(
       context,
@@ -110,24 +188,28 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
   void _handleAction(int direction) {
     if (scannedCode == null) return;
     final timestamp = _scannedAt ?? DateTime.now();
+
+    final newRecord = ScannedPermitRecord(
+      code: scannedCode!,
+      direction: direction,
+      timestamp: timestamp,
+    );
+
     setState(() {
-      _scannedPermits.insert(
-        0,
-        ScannedPermitRecord(
-          code: scannedCode!,
-          direction: direction,
-          timestamp: timestamp,
-        ),
-      );
+      _scannedPermits.insert(0, newRecord);
       scannedCode = null;
       _scannedAt = null;
       selectedAction = null;
     });
 
+    // ─── PERSIST AFTER ADDING ───
+    _saveRecordsToStorage();
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: direction == 1 ? accentBlue : const Color(0xFFC62828),
+        backgroundColor:
+            direction == 1 ? accentBlue : const Color(0xFFC62828),
         content: Text(
           direction == 1
               ? "Checked In successfully"
@@ -160,9 +242,7 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -191,7 +271,8 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
               ),
               const SizedBox(height: 10),
               Text(
-                "Are you sure you want to remove ${_selectedIndexes.length} record(s)?",
+                "Are you sure you want to remove "
+                "${_selectedIndexes.length} record(s)?",
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 14,
@@ -231,6 +312,15 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
                           _isSelectionMode = false;
                           _selectedIndexes.clear();
                         });
+
+                        // ─── PERSIST AFTER DELETING ───
+                        _saveRecordsToStorage();
+
+                        // ─── CLEAR STORAGE IF EMPTY ───
+                        if (_scannedPermits.isEmpty) {
+                          _clearStorage();
+                        }
+
                         Navigator.pop(ctx);
                       },
                       style: ElevatedButton.styleFrom(
@@ -285,6 +375,15 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
     });
     _syncIconController.stop();
     _syncIconController.reset();
+
+    // ─── PERSIST AFTER SYNC (REMOVE SYNCED RECORDS) ───
+    if (_scannedPermits.isEmpty) {
+      await _clearStorage();
+    } else {
+      await _saveRecordsToStorage();
+    }
+
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
@@ -299,51 +398,64 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7FC),
       extendBody: true,
-
-      // ─── BOTTOM NAVIGATION BAR ───
       bottomNavigationBar: CustomBottomNav(
         currentIndex: _currentNavIndex,
         onTabSelected: _onTabSelected,
         onScanPressed: _openScanner,
       ),
-
-      // ─── FLOATING QR SCANNER BUTTON ───
-      floatingActionButton: ScanFab(
-        onPressed: _openScanner,
-      ),
+      floatingActionButton: ScanFab(onPressed: _openScanner),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-
       body: Column(
         children: [
           _buildHeader(),
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildOfflineBanner(),
-                  const SizedBox(height: 14),
-                  _buildScanCard(),
-                  const SizedBox(height: 12),
-                  _buildScannedCodeCard(),
+            child: _isLoading
+                ? _buildLoadingState()
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildOfflineBanner(),
+                        const SizedBox(height: 14),
+                        _buildScanCard(),
+                        const SizedBox(height: 12),
+                        _buildScannedCodeCard(),
+                        if (scannedCode != null) ...[
+                          const SizedBox(height: 16),
+                          _buildActionButtons(),
+                        ],
+                        const SizedBox(height: 22),
+                        _buildRecordsHeader(),
+                        const SizedBox(height: 8),
+                        if (_isSelectionMode) _buildSelectionBar(),
+                        const SizedBox(height: 8),
+                        _scannedPermits.isEmpty
+                            ? _buildEmptyState()
+                            : _buildPermitTable(),
+                      ],
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
 
-                  if (scannedCode != null) ...[
-                    const SizedBox(height: 16),
-                    _buildActionButtons(),
-                  ],
-
-                  const SizedBox(height: 22),
-                  _buildRecordsHeader(),
-                  const SizedBox(height: 8),
-                  if (_isSelectionMode) _buildSelectionBar(),
-                  const SizedBox(height: 8),
-
-                  _scannedPermits.isEmpty
-                      ? _buildEmptyState()
-                      : _buildPermitTable(),
-                ],
-              ),
+  // ─── LOADING STATE ───
+  Widget _buildLoadingState() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(color: primaryBlue),
+          SizedBox(height: 16),
+          Text(
+            "Loading saved records...",
+            style: TextStyle(
+              color: Color(0xFF6B7BA4),
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -379,14 +491,12 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
           padding: const EdgeInsets.fromLTRB(8, 8, 16, 28),
           child: Row(
             children: [
-              // ─── BACK BUTTON → navigates to HomeScreen ───
               GestureDetector(
                 onTap: () {
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const HomePage(),
-                    ),
+                        builder: (context) => const HomePage()),
                     (route) => false,
                   );
                 },
@@ -435,7 +545,6 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
                   ],
                 ),
               ),
-              // ─── SYNC BUTTON ───
               GestureDetector(
                 onTap: _isSyncing ? null : _syncRecords,
                 child: AnimatedContainer(
@@ -661,10 +770,7 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
             const SizedBox(height: 10),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 14,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
               decoration: BoxDecoration(
                 color: scannedCode != null
                     ? const Color(0xFFEEF4FF)
@@ -684,9 +790,8 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
                   fontStyle: scannedCode == null
                       ? FontStyle.italic
                       : FontStyle.normal,
-                  color: scannedCode == null
-                      ? const Color(0xFF9AAAC8)
-                      : primaryBlue,
+                  color:
+                      scannedCode == null ? const Color(0xFF9AAAC8) : primaryBlue,
                   fontWeight: scannedCode == null
                       ? FontWeight.normal
                       : FontWeight.w700,
@@ -718,10 +823,7 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
           child: _ActionButton(
             label: "Check Out",
             icon: Icons.logout_rounded,
-            gradient: const [
-              Color(0xFFEF5350),
-              Color(0xFFC62828),
-            ],
+            gradient: const [Color(0xFFEF5350), Color(0xFFC62828)],
             isSelected: selectedAction == "checkout",
             selectedBorderColor: const Color(0xFFEF9A9A),
             onTap: () => _handleAction(0),
@@ -749,10 +851,7 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
             if (_scannedPermits.isNotEmpty) ...[
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 3,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                 decoration: BoxDecoration(
                   color: primaryBlue,
                   borderRadius: BorderRadius.circular(12),
@@ -867,10 +966,7 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
             const SizedBox(height: 4),
             const Text(
               "Scan a QR code to get started",
-              style: TextStyle(
-                color: Color(0xFF9AAAC8),
-                fontSize: 13,
-              ),
+              style: TextStyle(color: Color(0xFF9AAAC8), fontSize: 13),
             ),
           ],
         ),
@@ -946,7 +1042,7 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
             physics: const NeverScrollableScrollPhysics(),
             padding: EdgeInsets.zero,
             itemCount: _scannedPermits.length,
-            separatorBuilder: (_, _) => const Divider(
+            separatorBuilder: (_, __) => const Divider(
               height: 1,
               thickness: 1,
               color: Color(0xFFF0F4FA),
@@ -977,11 +1073,7 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
                         : Colors.transparent,
                     border: isSelected
                         ? const Border(
-                            left: BorderSide(
-                              color: primaryBlue,
-                              width: 3,
-                            ),
-                          )
+                            left: BorderSide(color: primaryBlue, width: 3))
                         : null,
                   ),
                   child: IntrinsicHeight(
@@ -989,7 +1081,8 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
                       children: [
                         if (_isSelectionMode)
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 8),
                             child: Icon(
                               isSelected
                                   ? Icons.check_circle_rounded
@@ -1081,7 +1174,8 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
                                       color: isCheckIn
                                           ? const Color(0xFFE3F2FD)
                                           : const Color(0xFFFFEBEE),
-                                      borderRadius: BorderRadius.circular(20),
+                                      borderRadius:
+                                          BorderRadius.circular(20),
                                       border: Border.all(
                                         color: isCheckIn
                                             ? const Color(0xFF90CAF9)
