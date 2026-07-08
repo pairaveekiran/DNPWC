@@ -1,5 +1,10 @@
+import 'dart:io';
+
+import 'package:dnpwc/screen/pdf_viewer.dart';
+import 'package:dnpwc/services/report_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 
 class ReportPage extends StatefulWidget {
   const ReportPage({super.key});
@@ -18,6 +23,9 @@ class _ReportPageState extends State<ReportPage> {
   int _selectedTab = 0; // 0 = Check In, 1 = Check Out
   DateTime _selectedDate = DateTime.now();
   bool _isGenerating = false;
+
+  final ReportService _reportService = ReportService();
+  int? _cachedOrgId;
 
   // ─── PICK DATE ───
   Future<void> _pickDate() async {
@@ -51,19 +59,95 @@ class _ReportPageState extends State<ReportPage> {
   // ─── GENERATE REPORT ───
   Future<void> _generateReport() async {
     setState(() => _isGenerating = true);
-    await Future.delayed(const Duration(seconds: 2));
-    if (!mounted) return;
-    setState(() => _isGenerating = false);
 
+    try {
+      // 1. Resolve organization ID (from cache or fetch from profile)
+      int orgId;
+      if (_cachedOrgId != null) {
+        orgId = _cachedOrgId!;
+      } else {
+        final orgResult = await _reportService.fetchOrganizationId();
+        if (!mounted) return;
+        if (orgResult is OrgIdFailure) {
+          _showError(orgResult.message);
+          return;
+        }
+        orgId = (orgResult as OrgIdSuccess).organizationId;
+        _cachedOrgId = orgId;
+      }
+
+      // 2. Build request parameters
+      //    Check In (_selectedTab == 0) → direction = 1
+      //    Check Out (_selectedTab == 1) → direction = 0
+      final direction = _selectedTab == 0 ? 1 : 0;
+      final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
+
+      // 3. Download the PDF
+      final downloadResult = await _reportService.downloadReportPdf(
+        organizationId: orgId,
+        direction: direction,
+        date: dateStr,
+      );
+
+      if (!mounted) return;
+
+      if (downloadResult is ReportDownloadFailure) {
+        _showError(downloadResult.message);
+        return;
+      }
+
+      // 4. Save PDF to a temp file
+      final pdfBytes = (downloadResult as ReportDownloadSuccess).pdfBytes;
+      final tempDir = await getTemporaryDirectory();
+      final fileName =
+          'report_${_selectedTab == 0 ? "checkin" : "checkout"}_$dateStr.pdf';
+      final file = File('${tempDir.path}/$fileName');
+      await file.writeAsBytes(pdfBytes);
+
+      if (!mounted) return;
+
+      // 5. Show snackbar confirmation
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: accentBlue,
+          content: Text(
+            "${_selectedTab == 0 ? 'Check-In' : 'Check-Out'} report generated for "
+            "${DateFormat('MMM dd, yyyy').format(_selectedDate)}",
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+
+      // 6. Navigate to PDF viewer
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PdfViewerScreen(
+            filePath: file.path,
+            title:
+                "${_selectedTab == 0 ? 'Check-In' : 'Check-Out'} Report",
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isGenerating = false);
+      }
+    }
+  }
+
+  /// Shows a floating error snackbar. The `finally` block in
+  /// [_generateReport] resets the generating state.
+  void _showError(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: accentBlue,
-        content: Text(
-          "${_selectedTab == 0 ? 'Check-In' : 'Check-Out'} report generated for "
-          "${DateFormat('MMM dd, yyyy').format(_selectedDate)}",
-        ),
-        duration: const Duration(seconds: 2),
+        backgroundColor: const Color(0xFFC62828),
+        content: Text(message),
+        duration: const Duration(seconds: 3),
       ),
     );
   }
