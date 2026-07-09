@@ -69,7 +69,7 @@ class _DummyState extends State<Dummy> {
 
     if (result is CheckinSuccess) {
       final response = result.response;
-      print('[Dummy] API success - status: ${response.status}, permit: ${response.permit?.code}');
+      debugPrint('[Dummy] API success - status: ${response.status}, permit: ${response.permit?.code}');
       if (!response.status) {
         setState(() {
           _isLoading = false;

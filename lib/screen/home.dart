@@ -297,7 +297,7 @@ class _HomePageState extends State<HomePage> {
           const CircleAvatar(
             radius: 24,
             backgroundColor: Colors.white,
-            backgroundImage: AssetImage('assets/images/dnpwc.png'),
+            backgroundImage: AssetImage('assets/images/dnpwc.webp'),
           ),
           const SizedBox(width: 12),
           const Expanded(
@@ -563,7 +563,7 @@ class _HomePageState extends State<HomePage> {
           child: Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
-                image: AssetImage('assets/images/img2.png'),
+                image: AssetImage('assets/images/img2.webp'),
                 fit: BoxFit.cover,
               ),
             ),

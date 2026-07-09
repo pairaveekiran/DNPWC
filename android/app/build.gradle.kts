@@ -36,6 +36,7 @@ android {
             // Required so that mobile_scanner's CameraX/ML Kit classes
             // (accessed via reflection) are not stripped in release builds.
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

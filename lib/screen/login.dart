@@ -498,7 +498,7 @@ class _LoginPageState
             decoration: const BoxDecoration(
               image: DecorationImage(
                 image: AssetImage(
-                  'assets/images/bg8.png',
+                  'assets/images/bg8.webp',
                 ),
                 fit: BoxFit.cover,
               ),
@@ -542,7 +542,7 @@ class _LoginPageState
                         child: CircleAvatar(
                           radius: 52,
                           backgroundImage: const AssetImage(
-                            'assets/images/dnpwc.png',
+                            'assets/images/dnpwc.webp',
                           ),
                           backgroundColor: Colors.green.shade700,
                         ),
@@ -885,7 +885,7 @@ class _LoginPageState
                                         horizontal: 12,
                                       ),
                                       child: Image.asset(
-                                        'assets/images/rhino.png',
+                                        'assets/images/rhino.webp',
                                         height: 28,
                                         width: 28,
                                       ),

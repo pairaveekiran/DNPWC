@@ -242,7 +242,7 @@ class _AppDrawerState
                   radius: 30,
                   backgroundColor: Colors.white,
                   backgroundImage: AssetImage(
-                    'assets/images/dnpwc.png',
+                    'assets/images/dnpwc.webp',
                   ),
                 ),
               ),

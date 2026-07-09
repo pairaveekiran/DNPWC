@@ -1000,12 +1000,14 @@ class _ProfilePageState
                                         }
 
                                         await AuthService().clearSession();
-                                        if (!mounted) {
+                                        if (!mounted || !context.mounted) {
                                           return;
                                         }
 
+                                        // rootNavigator: true navigates above the dialog
+                                        // regardless of which dialog/child context is used.
                                         Navigator.of(
-                                          dialogContext,
+                                          context,
                                           rootNavigator: true,
                                         ).pushAndRemoveUntil(
                                           MaterialPageRoute(

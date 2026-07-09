@@ -110,7 +110,7 @@ class _SplashScreenState
       backgroundColor: Colors.white,
       body: Center(
         child: Image.asset(
-          "assets/images/dnpwc.png",
+          "assets/images/dnpwc.webp",
           width: 220,
           fit: BoxFit.contain,
         ),
