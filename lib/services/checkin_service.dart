@@ -117,7 +117,6 @@ class CheckinService {
   Future<CheckinResult> performCheckInOut({
     required String code,
     required int direction,
-    required String loggedAt,
     required String remark,
   }) async {
     final prefs = await SharedPreferences.getInstance();
@@ -133,7 +132,6 @@ class CheckinService {
     final body = jsonEncode({
       'code': code,
       'direction': direction,
-      'logged_at': loggedAt,
       'remark': remark,
     });
 

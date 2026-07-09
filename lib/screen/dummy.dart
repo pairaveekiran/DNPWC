@@ -4,9 +4,8 @@ import 'package:dnpwc/services/checkin_service.dart';
 
 class Dummy extends StatefulWidget {
   final String? scannedCode;
-  final DateTime? scannedAt;
 
-  const Dummy({super.key, this.scannedCode, this.scannedAt});
+  const Dummy({super.key, this.scannedCode});
 
   @override
   State<Dummy> createState() => _DummyState();
@@ -22,7 +21,6 @@ class _DummyState extends State<Dummy> {
   static const Color borderColor = Color(0xFFE1E8F0);
 
   late final String scannedCode;
-  late final String formattedScannedAt;
 
   bool _isLoading = true;
   bool _isSubmitting = false;
@@ -39,9 +37,6 @@ class _DummyState extends State<Dummy> {
   void initState() {
     super.initState();
     scannedCode = widget.scannedCode ?? '';
-    final scanTime = widget.scannedAt ?? DateTime.now();
-    formattedScannedAt =
-        '${scanTime.year}-${_pad(scanTime.month)}-${_pad(scanTime.day)} ${_pad(scanTime.hour)}:${_pad(scanTime.minute)}';
     if (scannedCode.isEmpty) {
       _isLoading = false;
       _errorMessage = 'No scanned code provided';
@@ -50,7 +45,7 @@ class _DummyState extends State<Dummy> {
     }
   }
 
-  String _pad(int n) => n.toString().padLeft(2, '0');
+
 
   @override
   void dispose() {
@@ -182,7 +177,6 @@ class _DummyState extends State<Dummy> {
     final result = await service.performCheckInOut(
       code: scannedCode,
       direction: direction,
-      loggedAt: formattedScannedAt,
       remark: remark,
     );
 
@@ -597,25 +591,27 @@ class _DummyState extends State<Dummy> {
             Expanded(
               child: SizedBox(
                 height: 52,
-                child: OutlinedButton.icon(
+                child: ElevatedButton.icon(
                   onPressed: canCheckOut
                       ? () => _checkInOut(direction: 0, remark: 'Checked out')
                       : null,
                   icon: _isSubmitting
                       ? const SizedBox(
                           width: 20, height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: primaryBlue),
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                         )
                       : const Icon(Icons.logout_rounded, size: 20),
                   label: Text(
                     _isSubmitting ? 'Processing...' : 'Check-out',
                     style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                   ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: primaryBlue,
-                    side: BorderSide(color: _hasBeenCheckedIn ? primaryBlue : Colors.grey.shade300, width: 1.5),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade700,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    disabledForegroundColor: Colors.grey.shade400,
+                    disabledBackgroundColor: Colors.grey.shade300,
+                    disabledForegroundColor: Colors.white70,
                   ),
                 ),
               ),
