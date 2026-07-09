@@ -48,13 +48,19 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
         widget.onScanned!(code);
         Navigator.pop(context, code);
       } else {
-        // Online mode: navigate to Dummy screen to review permit details
+        // Online mode: navigate to Dummy screen to review permit details,
+        // then resume the camera when returning back
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => Dummy(scannedCode: code),
           ),
-        );
+        ).then((_) {
+          // Reset scan flag and restart camera so the user can scan again
+          if (!mounted) return;
+          setState(() => _isScanned = false);
+          _cameraController.start();
+        });
       }
     }
   }
