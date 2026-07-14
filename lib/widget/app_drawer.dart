@@ -161,7 +161,9 @@ class _AppDrawerState extends State<AppDrawer> {
                 child: const CircleAvatar(
                   radius: 30,
                   backgroundColor: Colors.white,
-                  backgroundImage: AssetImage('assets/images/dnpwc.png'),
+                  backgroundImage: AssetImage(
+                    'assets/images/dnpwc.png',
+                  ),
                 ),
               ),
               const SizedBox(width: 12),

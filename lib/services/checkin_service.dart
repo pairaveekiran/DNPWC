@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+
 import 'package:dnpwc/config/app_config.dart';
 import 'package:dnpwc/models/permit_checkin.dart';
 import 'package:http/http.dart' as http;
@@ -52,8 +54,8 @@ class CheckinService {
     final encodedCode = Uri.encodeComponent(scannedCode);
     final uri = Uri.parse('$baseUrl/checkpost/permit/check-in/$encodedCode');
 
-    print('[CheckinService] URL: $uri');
-    print('[CheckinService] Token: ${token.substring(0, token.length > 10 ? 10 : token.length)}...');
+    debugPrint('[CheckinService] URL: $uri');
+    debugPrint('[CheckinService] Token: ${token.substring(0, token.length > 10 ? 10 : token.length)}...');
 
     try {
       final response = await _client
@@ -74,8 +76,8 @@ class CheckinService {
         }
       }
 
-      print('[CheckinService] Status: ${response.statusCode}');
-      print('[CheckinService] Body: ${response.body.substring(0, response.body.length > 500 ? 500 : response.body.length)}');
+      debugPrint('[CheckinService] Status: ${response.statusCode}');
+      debugPrint('[CheckinService] Body: ${response.body.substring(0, response.body.length > 500 ? 500 : response.body.length)}');
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         if (payload == null) {
@@ -83,7 +85,7 @@ class CheckinService {
         }
 
         final permitResponse = PermitCheckinResponse.fromJson(payload);
-        print('[CheckinService] Parsed status: ${permitResponse.status}, visitors: ${permitResponse.visitors.length}');
+        debugPrint('[CheckinService] Parsed status: ${permitResponse.status}, visitors: ${permitResponse.visitors.length}');
         return CheckinSuccess(permitResponse);
       }
 
@@ -109,7 +111,7 @@ class CheckinService {
     } on http.ClientException {
       return const CheckinNetworkError('Check your internet connection');
     } catch (e) {
-      print('[CheckinService] Error: $e');
+      debugPrint('[CheckinService] Error: $e');
       return const CheckinFailure('Something went wrong, please try again');
     }
   }
@@ -117,7 +119,6 @@ class CheckinService {
   Future<CheckinResult> performCheckInOut({
     required String code,
     required int direction,
-    required String loggedAt,
     required String remark,
   }) async {
     final prefs = await SharedPreferences.getInstance();
@@ -133,12 +134,11 @@ class CheckinService {
     final body = jsonEncode({
       'code': code,
       'direction': direction,
-      'logged_at': loggedAt,
       'remark': remark,
     });
 
-    print('[CheckinService POST] URL: $uri');
-    print('[CheckinService POST] Body: $body');
+    debugPrint('[CheckinService POST] URL: $uri');
+    debugPrint('[CheckinService POST] Body: $body');
 
     try {
       final response = await _client
@@ -161,8 +161,8 @@ class CheckinService {
         }
       }
 
-      print('[CheckinService POST] Status: ${response.statusCode}');
-      print('[CheckinService POST] Body: ${response.body.length > 500 ? response.body.substring(0, 500) : response.body}');
+      debugPrint('[CheckinService POST] Status: ${response.statusCode}');
+      debugPrint('[CheckinService POST] Body: ${response.body.length > 500 ? response.body.substring(0, 500) : response.body}');
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final message = payload?['message']?.toString() ??
@@ -192,7 +192,7 @@ class CheckinService {
     } on http.ClientException {
       return const CheckinNetworkError('Check your internet connection');
     } catch (e) {
-      print('[CheckinService POST] Error: $e');
+      debugPrint('[CheckinService POST] Error: $e');
       return const CheckinFailure('Something went wrong, please try again');
     }
   }
