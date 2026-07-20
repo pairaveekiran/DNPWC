@@ -1,4 +1,7 @@
+import 'package:dnpwc/models/permit_checkin.dart';
 import 'package:dnpwc/screen/notices.dart';
+import 'package:dnpwc/services/checkin_service.dart';
+import 'package:dnpwc/services/connectivity_monitor.dart';
 import 'package:dnpwc/widget/bottom_nav.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -83,6 +86,9 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
       duration: const Duration(seconds: 1),
     );
 
+    // ─── LISTEN FOR CONNECTIVITY CHANGES TO SHOW/HIDE OFFLINE BANNER ───
+    ConnectivityMonitor.instance.stateNotifier.addListener(_onConnectivityChanged);
+
     // ─── LOAD SAVED PERMITS ON STARTUP ───
     _loadPermits();
   }
@@ -91,9 +97,14 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
   void dispose() {
     // ─── SAVE BEFORE DISPOSING ───
     _savePermits();
+    ConnectivityMonitor.instance.stateNotifier.removeListener(_onConnectivityChanged);
     WidgetsBinding.instance.removeObserver(this);
     _syncIconController.dispose();
     super.dispose();
+  }
+
+  void _onConnectivityChanged() {
+    if (mounted) setState(() {});
   }
 
   // ─── LIFECYCLE OBSERVER: SAVE WHEN APP GOES TO BACKGROUND/PAUSED ───
@@ -376,6 +387,7 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
   }
 
   // ─── SYNC (UI only) ───
+  // ─── SYNC pending permits with the server ───
   Future<void> _syncRecords() async {
     final pending =
         _scannedPermits.where((r) => r.syncStatus == "pending").toList();
@@ -390,36 +402,149 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
       return;
     }
 
+    if (!mounted) return;
     setState(() => _isSyncing = true);
     _syncIconController.repeat();
 
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      final result = await CheckinService().syncCheckIns(
+        records: pending
+            .map(
+              (r) => SyncCheckinItem(
+                code: r.code,
+                timestamp: r.timestamp,
+                direction: r.direction,
+              ),
+            )
+            .toList(),
+      );
 
-    if (!mounted) return;
-
-    setState(() {
-      _isSyncing = false;
-      for (final r in pending) {
-        r.syncStatus = "success";
+      if (result is CheckinUnauthorized) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Color(0xFFE67E22),
+              content: Text("Authentication token missing. Please log in again."),
+            ),
+          );
+        }
+        return;
       }
-      _scannedPermits.removeWhere((r) => r.syncStatus == "success");
-    });
 
-    _syncIconController.stop();
-    _syncIconController.reset();
+      if (result is CheckinNetworkError) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Color(0xFFC62828),
+              content: Text("Sync failed — check your connection"),
+            ),
+          );
+        }
+        return;
+      }
 
-    // ─── SAVE IMMEDIATELY AFTER SYNCING ───
-    await _savePermits();
+      if (result is CheckinFailure) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: const Color(0xFFC62828),
+              content: Text("Sync failed: ${result.message}"),
+            ),
+          );
+        }
+        return;
+      }
 
-    if (!mounted) return;
+      if (result is! CheckinSyncSuccess) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Color(0xFFC62828),
+              content: Text("Sync failed — please try again"),
+            ),
+          );
+        }
+        return;
+      }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: accentBlue,
-        content: Text("${pending.length} records synced successfully!"),
-      ),
-    );
+      final resultsByCode = <String, SyncCheckinResult>{};
+      for (final r in result.response.results) {
+        if (r.code.isNotEmpty) {
+          resultsByCode[r.code] = r;
+        }
+      }
+
+      int successCount = 0;
+      int failedCount = 0;
+      int orphanCount = 0;
+
+      for (final record in pending) {
+        final res = resultsByCode[record.code];
+        if (res == null) {
+          // The server didn't return a status for this permit. Keep it
+          // pending but surface a message so the user knows it wasn't processed.
+          record.errorMessage = "No response from server";
+          orphanCount++;
+          continue;
+        }
+
+        if (res.success) {
+          record.syncStatus = "success";
+          record.errorMessage = null;
+          successCount++;
+        } else {
+          record.syncStatus = "failed";
+          record.errorMessage = res.message ?? "Sync failed";
+          failedCount++;
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _scannedPermits.removeWhere((r) => r.syncStatus == "success");
+          // Indexes may have shifted after removal — drop any stale selection.
+          _selectedIndexes.clear();
+          _isSelectionMode = false;
+        });
+      }
+
+      // ─── PERSIST updated statuses so failed/pending survive a restart ───
+      await _savePermits();
+
+      final String message;
+      if (failedCount == 0 && orphanCount == 0) {
+        message =
+            "$successCount ${successCount == 1 ? 'record' : 'records'} synced successfully!";
+      } else {
+        final parts = <String>[
+          "$successCount synced",
+          if (failedCount > 0) "$failedCount failed",
+          if (orphanCount > 0) "$orphanCount pending",
+        ];
+        message = parts.join(', ');
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            backgroundColor:
+                failedCount == 0 && orphanCount == 0 ? accentBlue : const Color(0xFFE67E22),
+            content: Text(message),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        _syncIconController.stop();
+        _syncIconController.reset();
+        setState(() => _isSyncing = false);
+      }
+    }
   }
 
   @override
@@ -451,8 +576,12 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildOfflineBanner(),
-                        const SizedBox(height: 14),
+                        // Only show the offline banner when we actually have no connectivity.
+                        if (ConnectivityMonitor.instance.stateNotifier.value ==
+                            ConnectivityState.disconnected) ...[
+                          _buildOfflineBanner(),
+                          const SizedBox(height: 14),
+                        ],
                         _buildScanCard(),
                         const SizedBox(height: 12),
                         _buildScannedCodeCard(),
@@ -1144,14 +1273,15 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                if (isFailed &&
-                                    record.errorMessage != null) ...[
+                                if (record.errorMessage != null) ...[
                                   const SizedBox(height: 4),
                                   Text(
                                     record.errorMessage!,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 11,
-                                      color: Color(0xFFC62828),
+                                      color: isFailed
+                                          ? const Color(0xFFC62828)
+                                          : const Color(0xFFB45309),
                                     ),
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,

@@ -1,4 +1,5 @@
 import 'package:dnpwc/models/user_profile.dart';
+import 'package:dnpwc/utils/connectivity.dart';
 import 'package:dnpwc/screen/login.dart';
 import 'package:dnpwc/screen/off_checkin.dart';
 import 'package:dnpwc/screen/profile.dart';
@@ -246,7 +247,30 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _openQrScanner() {
+  Future<void> _openQrScanner() async {
+    // Check internet connectivity before opening the online QR scanner
+    final isOnline = await ConnectivityUtil.isInternetAvailable();
+
+    if (!mounted) return;
+
+    if (!isOnline) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Color(0xFFC62828),
+          content: Row(
+            children: [
+              Icon(Icons.wifi_off_rounded, color: Colors.white, size: 20),
+              SizedBox(width: 10),
+              Expanded(child: Text('No internet connection. Please check your network.')),
+            ],
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (!mounted) return;
     Navigator.push(
       context,
       MaterialPageRoute(

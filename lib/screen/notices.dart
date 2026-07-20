@@ -1,5 +1,6 @@
 import 'package:dnpwc/screen/off_checkin.dart';
 import 'package:dnpwc/screen/qr_scanner.dart';
+import 'package:dnpwc/utils/connectivity.dart';
 import 'package:flutter/material.dart';
 import '../widget/bottom_nav.dart';
 import 'home.dart';            // For back navigation
@@ -110,7 +111,30 @@ class _NoticesPageState extends State<NoticesPage>
     );
   }
 
-  void _navigateToQRScanner() {
+  Future<void> _navigateToQRScanner() async {
+    // Check internet connectivity before opening the online QR scanner
+    final isOnline = await ConnectivityUtil.isInternetAvailable();
+
+    if (!mounted) return;
+
+    if (!isOnline) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Color(0xFFC62828),
+          content: Row(
+            children: [
+              Icon(Icons.wifi_off_rounded, color: Colors.white, size: 20),
+              SizedBox(width: 10),
+              Expanded(child: Text('No internet connection. Please check your network.')),
+            ],
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (!mounted) return;
     Navigator.push(
       context,
       MaterialPageRoute(

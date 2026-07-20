@@ -2,10 +2,15 @@ import 'dart:async';
 import 'package:dnpwc/screen/home.dart';
 import 'package:dnpwc/screen/login.dart';
 import 'package:dnpwc/services/auth_service.dart';
+import 'package:dnpwc/services/connectivity_monitor.dart';
+import 'package:dnpwc/widget/connectivity_banner.dart';
 import 'package:flutter/material.dart';
 
 void
 main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  // Start the global connectivity monitor.
+  ConnectivityMonitor.instance.start();
   runApp(
     const MyApp(),
   );
@@ -27,6 +32,21 @@ class MyApp
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: const SplashScreen(),
+      // ─── Global overlay for the connectivity banner ───
+      builder: (context, child) {
+        return Stack(
+          children: [
+            child ?? const SizedBox.shrink(),
+            // Positioned at the very top of the screen.
+            const Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: ConnectivityBanner(),
+            ),
+          ],
+        );
+      },
     );
   }
 }

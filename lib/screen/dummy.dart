@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:dnpwc/config/app_config.dart';
 import 'package:dnpwc/services/checkin_service.dart';
 
 class Dummy extends StatefulWidget {
@@ -26,7 +25,6 @@ class _DummyState extends State<Dummy> {
   bool _isSubmitting = false;
   bool _hasBeenCheckedIn = false;
   String? _errorMessage;
-  String? _debugInfo;
   List<_StatItem> _stats = [];
   List<_PermitHolder> _permitHolders = [];
   List<_VehicleItem> _vehicles = [];
@@ -59,9 +57,6 @@ class _DummyState extends State<Dummy> {
       _errorMessage = null;
     });
 
-    final baseUrl = AppConfig.baseUrl.replaceAll(RegExp(r'/$'), '');
-    final debugUrl = '$baseUrl/checkpost/permit/check-in/${Uri.encodeComponent(scannedCode)}';
-
     final service = CheckinService();
     final result = await service.fetchPermitDetails(scannedCode);
 
@@ -74,7 +69,6 @@ class _DummyState extends State<Dummy> {
         setState(() {
           _isLoading = false;
           _errorMessage = response.message.isNotEmpty ? response.message : 'Failed to load permit details';
-          _debugInfo = 'URL: $debugUrl\nScanned: $scannedCode\nAPI status: false';
         });
         return;
       }
@@ -145,25 +139,21 @@ class _DummyState extends State<Dummy> {
       setState(() {
         _isLoading = false;
         _errorMessage = 'Session expired. Please log in again.';
-        _debugInfo = 'URL: $debugUrl\nScanned: $scannedCode\nError: 401 Unauthorized';
       });
     } else if (result is CheckinNotFound) {
       setState(() {
         _isLoading = false;
         _errorMessage = result.message;
-        _debugInfo = 'URL: $debugUrl\nScanned: $scannedCode\nError: 404 Not Found';
       });
     } else if (result is CheckinNetworkError) {
       setState(() {
         _isLoading = false;
         _errorMessage = result.message;
-        _debugInfo = 'URL: $debugUrl\nScanned: $scannedCode\nError: Network/Socket';
       });
     } else if (result is CheckinFailure) {
       setState(() {
         _isLoading = false;
         _errorMessage = result.message;
-        _debugInfo = 'URL: $debugUrl\nScanned: $scannedCode\nError: API Failure';
       });
     }
   }
@@ -262,36 +252,139 @@ class _DummyState extends State<Dummy> {
   }
 
   Widget _buildErrorState() {
+    final bool isAuthError = _errorMessage?.toLowerCase().contains('session') ??
+        _errorMessage?.toLowerCase().contains('login') ?? false;
+    final bool isNetworkError = _errorMessage?.toLowerCase().contains('internet') ??
+        _errorMessage?.toLowerCase().contains('connection') ?? false;
+    final bool isNotFound = _errorMessage?.toLowerCase().contains('not found') ??
+        _errorMessage?.toLowerCase().contains('invalid') ?? false;
+
+    IconData errorIcon;
+    Color errorColor;
+    String title;
+    String hint;
+
+    if (isAuthError) {
+      errorIcon = Icons.login_rounded;
+      errorColor = const Color(0xFFE67E22);
+      title = 'Session Expired';
+      hint = 'Please log in again to continue.';
+    } else if (isNetworkError) {
+      errorIcon = Icons.wifi_off_rounded;
+      errorColor = const Color(0xFFE67E22);
+      title = 'Connection Issue';
+      hint = 'Please check your internet connection and try again.';
+    } else if (isNotFound) {
+      errorIcon = Icons.search_off_rounded;
+      errorColor = const Color(0xFFE67E22);
+      title = 'Not Found';
+      hint = 'The permit code could not be found. Please verify and try again.';
+    } else {
+      errorIcon = Icons.error_outline_rounded;
+      errorColor = const Color(0xFFC62828);
+      title = 'Oops!';
+      hint = 'Something went wrong. Please try again.';
+    }
+
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // ─── Animated error icon with glow ───
             Container(
-              width: 64, height: 64,
-              decoration: BoxDecoration(color: Colors.red.shade50, shape: BoxShape.circle),
-              child: Icon(Icons.error_outline_rounded, color: Colors.red.shade400, size: 32),
-            ),
-            const SizedBox(height: 16),
-            const Text('Oops!', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.black87)),
-            const SizedBox(height: 8),
-            Text(_errorMessage ?? 'Something went wrong', textAlign: TextAlign.center, style: const TextStyle(fontSize: 14, color: textGrey, height: 1.4)),
-            if (_debugInfo != null) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade300)),
-                child: Text(_debugInfo!, style: const TextStyle(fontSize: 11, color: Colors.black54, fontFamily: 'monospace'), textAlign: TextAlign.left),
+              width: 88,
+              height: 88,
+              decoration: BoxDecoration(
+                color: errorColor.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: errorColor.withValues(alpha: 0.15),
+                    blurRadius: 24,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
               ),
-            ],
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: _fetchPermitDetails,
-              icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text('Retry', style: TextStyle(fontWeight: FontWeight.w700)),
-              style: ElevatedButton.styleFrom(backgroundColor: primaryBlue, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+              child: Icon(errorIcon, color: errorColor, size: 42),
             ),
+            const SizedBox(height: 24),
+            // ─── Title ───
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: Colors.black87,
+                letterSpacing: 0.2,
+              ),
+            ),
+            const SizedBox(height: 12),
+            // ─── Error message ───
+            Container(
+              constraints: const BoxConstraints(maxWidth: 320),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: errorColor.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: errorColor.withValues(alpha: 0.15),
+                  width: 1,
+                ),
+              ),
+              child: Text(
+                _errorMessage ?? hint,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.black87,
+                  height: 1.5,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            const SizedBox(height: 28),
+            // ─── Retry button ───
+            SizedBox(
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: _fetchPermitDetails,
+                icon: const Icon(Icons.refresh_rounded, size: 20),
+                label: const Text(
+                  'Try Again',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryBlue,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 28),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  shadowColor: primaryBlue.withValues(alpha: 0.3),
+                ),
+              ),
+            ),
+            // Secondary hint shown only when we have a specific server message
+            if (_errorMessage != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Text(
+                  hint,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade500,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ),
           ],
         ),
       ),

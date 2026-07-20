@@ -276,11 +276,9 @@ class AuthService {
       return message.trim();
     }
 
-    final trimmedBody =
-        rawBody.trim();
-    return trimmedBody.isEmpty
-        ? null
-        : trimmedBody;
+    // Never expose raw response body to the user – return null so
+    // the caller falls back to its own default message.
+    return null;
   }
 
   String?

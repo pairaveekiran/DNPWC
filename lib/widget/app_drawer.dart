@@ -3,6 +3,7 @@ import 'package:dnpwc/screen/developer_info.dart';
 import 'package:dnpwc/screen/notices.dart';
 import 'package:dnpwc/screen/report.dart';
 import 'package:dnpwc/services/auth_service.dart';
+import 'package:dnpwc/utils/connectivity.dart';
 import 'package:dnpwc/utils/dialogs.dart';
 import 'package:flutter/material.dart';
 import '../screen/login.dart';
@@ -63,7 +64,33 @@ class _AppDrawerState extends State<AppDrawer> {
                   context: context,
                   icon: Icons.qr_code_scanner_outlined,
                   title: 'QR Scanner',
-                  onTap: () => _navigateTo(context, const QRScannerScreen()),
+                  onTap: () async {
+                    // Check internet connectivity before opening the online QR scanner
+                    Navigator.pop(context);
+                    final isOnline = await ConnectivityUtil.isInternetAvailable();
+                    if (!context.mounted) return;
+                    if (!isOnline) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: Color(0xFFC62828),
+                          content: Row(
+                            children: [
+                              Icon(Icons.wifi_off_rounded, color: Colors.white, size: 20),
+                              SizedBox(width: 10),
+                              Expanded(child: Text('No internet connection. Please check your network.')),
+                            ],
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+                    if (!context.mounted) return;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const QRScannerScreen()),
+                    );
+                  },
                 ),
                 _buildMenuItem(
                   context: context,

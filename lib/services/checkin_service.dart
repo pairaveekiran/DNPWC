@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:dnpwc/config/app_config.dart';
 import 'package:dnpwc/models/permit_checkin.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 sealed class CheckinResult {
@@ -35,6 +36,11 @@ class CheckinNetworkError extends CheckinResult {
 class CheckinFailure extends CheckinResult {
   const CheckinFailure(this.message);
   final String message;
+}
+
+class CheckinSyncSuccess extends CheckinResult {
+  const CheckinSyncSuccess(this.response);
+  final SyncCheckinResponse response;
 }
 
 class CheckinService {
@@ -193,6 +199,97 @@ class CheckinService {
       return const CheckinNetworkError('Check your internet connection');
     } catch (e) {
       debugPrint('[CheckinService POST] Error: $e');
+      return const CheckinFailure('Something went wrong, please try again');
+    }
+  }
+
+  /// Bulk-synchronizes offline scanned permits to the check-in/check-out endpoint.
+  ///
+  /// [records] - pending [SyncCheckinItem]s to sync. Each is sent as
+  /// `{ code, logged_at, direction }`, where [logged_at] is formatted as
+  /// `yyyy-MM-dd HH:mm:ss` (local time).
+  ///
+  /// The endpoint returns a per-permit status list, so results are matched
+  /// back by `code` (never index). Returns [CheckinSyncSuccess] on a 2xx
+  /// response (even with partial failures), [CheckinUnauthorized] when no
+  /// token / 401, [CheckinNetworkError] on connectivity/timeout issues, or
+  /// [CheckinFailure] otherwise.
+  Future<CheckinResult> syncCheckIns({
+    required List<SyncCheckinItem> records,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('access_token');
+
+    if (token == null || token.isEmpty) {
+      return const CheckinUnauthorized();
+    }
+
+    final baseUrl = AppConfig.baseUrl.replaceAll(RegExp(r'/$'), '');
+    final uri = Uri.parse('$baseUrl/checkpost/permit/check-ins');
+
+    final body = jsonEncode({
+      'permits': records
+          .map(
+            (r) => SyncCheckinRequest(
+              code: r.code,
+              loggedAt: DateFormat('yyyy-MM-dd HH:mm:ss').format(r.timestamp),
+              direction: r.direction,
+            ).toJson(),
+          )
+          .toList(),
+    });
+
+    print('[CheckinService sync] URL: $uri');
+    print('[CheckinService sync] Body: $body');
+
+    try {
+      final response = await _client
+          .post(
+            uri,
+            headers: <String, String>{
+              'Authorization': 'Bearer $token',
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: body,
+          )
+          .timeout(const Duration(seconds: 20));
+
+      final responseBody = response.body;
+      print('[CheckinService sync] Status: ${response.statusCode}');
+      print('[CheckinService sync] Response: ${responseBody.length > 1000 ? responseBody.substring(0, 1000) : responseBody}');
+
+      if (response.statusCode == HttpStatus.unauthorized) {
+        return const CheckinUnauthorized();
+      }
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return const CheckinFailure(
+          'Something went wrong. Please try again.',
+        );
+      }
+
+      Map<String, dynamic>? payload;
+      if (responseBody.trim().isNotEmpty) {
+        final decoded = jsonDecode(responseBody);
+        payload = decoded is Map<String, dynamic> ? decoded : null;
+      }
+
+      final parsed = payload != null
+          ? SyncCheckinResponse.fromJson(payload)
+          : SyncCheckinResponse(results: const []);
+      print('[CheckinService sync] Parsed ${parsed.results.length} results from response');
+      return CheckinSyncSuccess(parsed);
+    } on SocketException {
+      return const CheckinNetworkError('Check your internet connection');
+    } on TimeoutException {
+      return const CheckinNetworkError('Request timed out. Please try again.');
+    } on FormatException {
+      return const CheckinFailure('Something went wrong, please try again');
+    } on http.ClientException {
+      return const CheckinNetworkError('Check your internet connection');
+    } catch (e) {
+      print('[CheckinService sync] Error: $e');
       return const CheckinFailure('Something went wrong, please try again');
     }
   }

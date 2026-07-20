@@ -199,3 +199,103 @@ class IssuingAuthority {
     );
   }
 }
+
+/// A single offline-scanned permit queued for sync.
+class SyncCheckinItem {
+  final String code;
+  final DateTime timestamp;
+  final int direction;
+
+  SyncCheckinItem({
+    required this.code,
+    required this.timestamp,
+    required this.direction,
+  });
+}
+
+/// A single permit entry in the offline sync request body.
+class SyncCheckinRequest {
+  final String code;
+  final String loggedAt;
+  final int direction;
+
+  SyncCheckinRequest({
+    required this.code,
+    required this.loggedAt,
+    required this.direction,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'code': code,
+        'logged_at': loggedAt,
+        'direction': direction,
+      };
+}
+
+/// Per-permit result returned by the bulk check-in sync endpoint.
+class SyncCheckinResult {
+  final String code;
+  final bool success;
+  final String? message;
+
+  SyncCheckinResult({
+    required this.code,
+    required this.success,
+    this.message,
+  });
+
+  factory SyncCheckinResult.fromJson(Map<String, dynamic> json) {
+    final status = json['status']?.toString().toLowerCase() ?? '';
+    return SyncCheckinResult(
+      code: json['code']?.toString() ?? '',
+      success: status == 'success' || status == 'ok',
+      message: json['message']?.toString(),
+    );
+  }
+}
+
+/// Parsed bulk check-in sync response.
+///
+/// The server returns:
+/// ```json
+/// {
+///   "valid": ["CODE1", "CODE2"],
+///   "invalid": [{"code": "CODE3", "message": "..."}]
+/// }
+/// ```
+/// Results are matched back to the request by [SyncCheckinResult.code].
+class SyncCheckinResponse {
+  final List<SyncCheckinResult> results;
+
+  SyncCheckinResponse({required this.results});
+
+  factory SyncCheckinResponse.fromJson(Map<String, dynamic> json) {
+    final results = <SyncCheckinResult>[];
+
+    // Parse "valid" — array of strings (codes that succeeded)
+    final validRaw = json['valid'];
+    if (validRaw is List) {
+      for (final item in validRaw) {
+        if (item is String && item.isNotEmpty) {
+          results.add(SyncCheckinResult(code: item, success: true));
+        }
+      }
+    }
+
+    // Parse "invalid" — array of objects { code, message }
+    final invalidRaw = json['invalid'];
+    if (invalidRaw is List) {
+      for (final item in invalidRaw) {
+        if (item is Map<String, dynamic>) {
+          results.add(SyncCheckinResult(
+            code: item['code']?.toString() ?? '',
+            success: false,
+            message: item['message']?.toString(),
+          ));
+        }
+      }
+    }
+
+    return SyncCheckinResponse(results: results);
+  }
+}
