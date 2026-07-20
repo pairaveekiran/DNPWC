@@ -16,24 +16,24 @@ class _DeveloperInfoState extends State<DeveloperInfo> {
 
   final List<Map<String, String>> developers = const [
     {
-      'name': 'Bikash Karki',
+      'name': 'Sanjog Godar',
       'position': 'Senior Flutter Developer',
     },
     {
-      'name': 'Aayush Sharma',
-      'position': 'Backend Developer',
+      'name': 'Nishan Shah',
+      'position': 'Senior Backend Developer',
     },
     {
-      'name': 'Srijan Gurung',
-      'position': 'UI/UX Designer',
+      'name': 'Pairavi & Aayush',
+      'position': 'UI/UX Designer Intern',
     },
     {
-      'name': 'Pratik Adhikari',
-      'position': 'Project Manager',
+      'name': 'Sneha Giri',
+      'position': 'Project Manager Intern',
     },
     {
-      'name': 'Nisha Thapa',
-      'position': 'QA Engineer',
+      'name': 'Mahima & Kritika',
+      'position': 'QA Engineer Intern',
     },
   ];
 
