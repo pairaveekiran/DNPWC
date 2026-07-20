@@ -7,12 +7,15 @@ class DeveloperInfo extends StatefulWidget {
   State<DeveloperInfo> createState() => _DeveloperInfoState();
 }
 
-class _DeveloperInfoState extends State<DeveloperInfo> {
+class _DeveloperInfoState extends State<DeveloperInfo>
+    with SingleTickerProviderStateMixin {
   static const Color primaryBlue = Color(0xFF0D47A1);
   static const Color darkBlue = Color(0xFF0A2E5C);
   static const Color mediumBlue = Color(0xFF1E5AA8);
   static const Color backgroundColor = Color(0xFFF0F2F5);
   static const Color lightBlue = Color(0xFFE3ECF9);
+
+  late AnimationController _animationController;
 
   final List<Map<String, String>> developers = const [
     {
@@ -24,7 +27,7 @@ class _DeveloperInfoState extends State<DeveloperInfo> {
       'position': 'Senior Backend Developer',
     },
     {
-      'name': 'Pairavi & Aayush',
+      'name': 'Pairavee & Aayush',
       'position': 'UI/UX Designer Intern',
     },
     {
@@ -36,6 +39,21 @@ class _DeveloperInfoState extends State<DeveloperInfo> {
       'position': 'QA Engineer Intern',
     },
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    )..forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,6 +72,8 @@ class _DeveloperInfoState extends State<DeveloperInfo> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildCompanyCard(),
+                    const SizedBox(height: 22),
+                    _buildCEOSection(),
                     const SizedBox(height: 22),
                     _buildTeamHeader(),
                     const SizedBox(height: 4),
@@ -242,6 +262,322 @@ class _DeveloperInfoState extends State<DeveloperInfo> {
     );
   }
 
+  Widget _buildCEOSection() {
+    return SlideTransition(
+      position: Tween<Offset>(
+        begin: const Offset(0, 0.3),
+        end: Offset.zero,
+      ).animate(CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeOutCubic,
+      )),
+      child: FadeTransition(
+        opacity: _animationController,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                _buildSectionTitle(
+                  icon: Icons.star_rounded,
+                  title: 'Leadership',
+                ),
+                const Spacer(),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFFF8E1), Color(0xFFFFECB3)],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: const Color(0xFFFFD54F),
+                      width: 1,
+                    ),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.workspace_premium_rounded,
+                        size: 14,
+                        color: Color(0xFFE65100),
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        'CEO',
+                        style: TextStyle(
+                          color: Color(0xFFE65100),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF0A2E5C),
+                    Color(0xFF1565C0),
+                    Color(0xFF1E88E5),
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: primaryBlue.withValues(alpha: 0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                  BoxShadow(
+                    color: primaryBlue.withValues(alpha: 0.1),
+                    blurRadius: 40,
+                    offset: const Offset(0, 16),
+                  ),
+                ],
+              ),
+              child: Stack(
+                children: [
+                  Positioned(
+                    right: -30,
+                    top: -30,
+                    child: Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.05),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    right: 20,
+                    bottom: -40,
+                    child: Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.04),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: -20,
+                    bottom: -20,
+                    child: Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.03),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(22),
+                    child: Column(
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(3),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Color(0xFFFFD54F),
+                                    Color(0xFFFF8F00),
+                                    Color(0xFFFFD54F),
+                                  ],
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFFFFD54F)
+                                        .withValues(alpha: 0.4),
+                                    blurRadius: 16,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white,
+                                ),
+                                child: ClipOval(
+                                  child: Image.asset(
+                                    'assets/images/ishwor.webp',
+                                    width: 82,
+                                    height: 82,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        width: 82,
+                                        height: 82,
+                                        decoration: const BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          gradient: LinearGradient(
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                            colors: [
+                                              Color(0xFF1565C0),
+                                              Color(0xFF0D47A1),
+                                            ],
+                                          ),
+                                        ),
+                                        child: const Center(
+                                          child: Text(
+                                            'IC',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 28,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 18),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Ishwor Raj Chalise',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.3,
+                                      height: 1.2,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 5,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      gradient: const LinearGradient(
+                                        colors: [
+                                          Color(0xFFFFD54F),
+                                          Color(0xFFFF8F00),
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: const Color(0xFFFF8F00)
+                                              .withValues(alpha: 0.3),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Text(
+                                      'Chief Executive Officer',
+                                      style: TextStyle(
+                                        color: Color(0xFF3E2723),
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 0.3,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.business_rounded,
+                                        size: 14,
+                                        color: Colors.white
+                                            .withValues(alpha: 0.7),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        'Websoft Technology Nepal',
+                                        style: TextStyle(
+                                          color: Colors.white
+                                              .withValues(alpha: 0.8),
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.15),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.format_quote_rounded,
+                                color: const Color(0xFFFFD54F)
+                                    .withValues(alpha: 0.8),
+                                size: 22,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Driving innovation and digital transformation across Nepal through cutting-edge technology solutions.',
+                                  style: TextStyle(
+                                    color:
+                                        Colors.white.withValues(alpha: 0.85),
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w500,
+                                    fontStyle: FontStyle.italic,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildTeamHeader() {
     return Row(
       children: [
@@ -371,19 +707,9 @@ class _DeveloperInfoState extends State<DeveloperInfo> {
             height: 58,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Color.fromRGBO(
-                avatarColor.r.toInt(),
-                avatarColor.g.toInt(),
-                avatarColor.b.toInt(),
-                0.12,
-              ),
+              color: avatarColor.withValues(alpha: 0.12),
               border: Border.all(
-                color: Color.fromRGBO(
-                  avatarColor.r.toInt(),
-                  avatarColor.g.toInt(),
-                  avatarColor.b.toInt(),
-                  0.25,
-                ),
+                color: avatarColor.withValues(alpha: 0.25),
                 width: 1.4,
               ),
             ),
