@@ -123,8 +123,9 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
 
         final List<ScannedPermitRecord> loaded = jsonList
             .map(
-              (e) =>
-                  ScannedPermitRecord.fromJson(e as Map<String, dynamic>),
+              (e) => ScannedPermitRecord.fromJson(
+                e as Map<String, dynamic>,
+              ),
             )
             .toList();
 
@@ -140,7 +141,7 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
         }
       }
     } catch (e) {
-      // If parsing fails, clear corrupted data and start fresh
+      // ─── IF PARSING FAILS CLEAR CORRUPTED DATA AND START FRESH ───
       await _clearCorruptedData();
       if (mounted) {
         setState(() => _isLoading = false);
@@ -211,14 +212,14 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
     );
   }
 
-  // ─── HANDLE CHECK IN / OUT ───
+  // ─── HANDLE CHECK IN / OUT (FIFO: add to end of list) ───
   void _handleAction(int direction) {
     if (scannedCode == null) return;
     final timestamp = _scannedAt ?? DateTime.now();
 
     setState(() {
-      _scannedPermits.insert(
-        0,
+      // ─── FIFO: add() appends to end so first scanned stays at top ───
+      _scannedPermits.add(
         ScannedPermitRecord(
           code: scannedCode!,
           direction: direction,
@@ -377,8 +378,10 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
 
   // ─── SYNC (UI only) ───
   Future<void> _syncRecords() async {
-    final pending =
-        _scannedPermits.where((r) => r.syncStatus == "pending").toList();
+    final pending = _scannedPermits
+        .where((r) => r.syncStatus == "pending")
+        .toList();
+
     if (pending.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -427,15 +430,20 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7FC),
       extendBody: true,
+
+      // ─── BOTTOM NAVIGATION BAR ───
       bottomNavigationBar: CustomBottomNav(
         currentIndex: _currentNavIndex,
         onTabSelected: _onTabSelected,
         onScanPressed: _openScanner,
       ),
+
+      // ─── FLOATING QR SCANNER BUTTON ───
       floatingActionButton: ScanFab(
         onPressed: _openScanner,
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+
       body: Column(
         children: [
           _buildHeader(),
@@ -447,7 +455,8 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
                     ),
                   )
                 : SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                    padding:
+                        const EdgeInsets.fromLTRB(16, 16, 16, 100),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -456,15 +465,18 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
                         _buildScanCard(),
                         const SizedBox(height: 12),
                         _buildScannedCodeCard(),
+
                         if (scannedCode != null) ...[
                           const SizedBox(height: 16),
                           _buildActionButtons(),
                         ],
+
                         const SizedBox(height: 22),
                         _buildRecordsHeader(),
                         const SizedBox(height: 8),
                         if (_isSelectionMode) _buildSelectionBar(),
                         const SizedBox(height: 8),
+
                         _scannedPermits.isEmpty
                             ? _buildEmptyState()
                             : _buildPermitTable(),
@@ -505,6 +517,7 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
           padding: const EdgeInsets.fromLTRB(8, 8, 16, 28),
           child: Row(
             children: [
+              // ─── BACK BUTTON → navigates to HomeScreen ───
               GestureDetector(
                 onTap: () {
                   Navigator.pushAndRemoveUntil(
@@ -560,6 +573,7 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
                   ],
                 ),
               ),
+              // ─── SYNC BUTTON ───
               GestureDetector(
                 onTap: _isSyncing ? null : _syncRecords,
                 child: AnimatedContainer(
@@ -1007,6 +1021,7 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
     return _buildCard(
       child: Column(
         children: [
+          // ─── TABLE HEADER ───
           Container(
             decoration: const BoxDecoration(
               color: Color(0xFFEEF2F8),
@@ -1018,6 +1033,31 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
             child: const IntrinsicHeight(
               child: Row(
                 children: [
+                  // ─── SR.NO COLUMN ───
+                  SizedBox(
+                    width: 44,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 12,
+                      ),
+                      child: Text(
+                        "#",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF6B7BA4),
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ),
+                  ),
+                  VerticalDivider(
+                    width: 1,
+                    thickness: 1,
+                    color: Colors.white,
+                  ),
                   Expanded(
                     flex: 2,
                     child: Padding(
@@ -1065,6 +1105,8 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
             ),
           ),
           const Divider(height: 1, thickness: 1, color: Color(0xFFE8EEF5)),
+
+          // ─── TABLE ROWS (FIFO order: index 0 = first scanned) ───
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -1080,6 +1122,9 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
               final isCheckIn = record.direction == 1;
               final isFailed = record.syncStatus == "failed";
               final isSelected = _selectedIndexes.contains(index);
+
+              // ─── FIFO ROW NUMBER: 1-based from top ───
+              final rowNumber = index + 1;
 
               return GestureDetector(
                 onTap: () {
@@ -1111,20 +1156,47 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
                   child: IntrinsicHeight(
                     child: Row(
                       children: [
-                        if (_isSelectionMode)
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 8),
-                            child: Icon(
-                              isSelected
-                                  ? Icons.check_circle_rounded
-                                  : Icons.circle_outlined,
-                              color: isSelected
-                                  ? primaryBlue
-                                  : const Color(0xFFCDD8EC),
-                              size: 20,
-                            ),
-                          ),
+                        // ─── SR.NO OR CHECKBOX ───
+                        SizedBox(
+                          width: 44,
+                          child: _isSelectionMode
+                              ? Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                  ),
+                                  child: Icon(
+                                    isSelected
+                                        ? Icons.check_circle_rounded
+                                        : Icons.circle_outlined,
+                                    color: isSelected
+                                        ? primaryBlue
+                                        : const Color(0xFFCDD8EC),
+                                    size: 20,
+                                  ),
+                                )
+                              : Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 12,
+                                  ),
+                                  child: Text(
+                                    "$rowNumber",
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF9AAAC8),
+                                    ),
+                                  ),
+                                ),
+                        ),
+                        const VerticalDivider(
+                          width: 1,
+                          thickness: 1,
+                          color: Color(0xFFF0F4FA),
+                        ),
+
+                        // ─── PERMIT ID + TIMESTAMP ───
                         Expanded(
                           flex: 2,
                           child: Padding(
@@ -1186,6 +1258,8 @@ class _OfflineScanScreenState extends State<OfflineScanScreen>
                           thickness: 1,
                           color: Color(0xFFF0F4FA),
                         ),
+
+                        // ─── ACTION BADGE ───
                         Expanded(
                           flex: 1,
                           child: Padding(
