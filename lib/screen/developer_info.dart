@@ -21,10 +21,10 @@ class _DeveloperInfoState extends State<DeveloperInfo> {
     },
     {
       'name': 'Nishan Shah',
-      'position': 'Backend Developer',
+      'position': 'Senior Backend Developer',
     },
     {
-      'name': 'Pairavi Kiran Bhattarai',
+      'name': 'Pairavi & Aayush',
       'position': 'UI/UX Designer Intern',
     },
     {
